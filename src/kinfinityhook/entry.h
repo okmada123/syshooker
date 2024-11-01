@@ -15,14 +15,15 @@
 */
 
 #pragma once
+#include "../Syshooker-Client/SyshookerCommon.h"
 
 ///
 /// Structures and typedefs.
 ///
 
 struct SyshookerSettings {
-	wchar_t NtCreateFileMagicName[256];
-	wchar_t NtWriteFileMagicName[256];
+	wchar_t NtCreateFileMagicName[MAX_PATH_SYSHOOKER];
+	wchar_t NtWriteFileMagicName[MAX_PATH_SYSHOOKER];
 };
 
 typedef NTSTATUS(*NtCreateFile_t)(

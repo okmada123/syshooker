@@ -309,7 +309,7 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		WriteHookData* data = static_cast<WriteHookData*>(Irp->UserBuffer);
 
 		// check nullptr and valid values
-		if (data == nullptr || data->BufferLength <= 0 || data->BufferLength > 256) {
+		if (data == nullptr || data->BufferLength <= 0 || data->BufferLength > MAX_PATH_SYSHOOKER) {
 			if (data != nullptr)
 				KdPrint(("BufferLength is probably wrong (%d). (0x%08X)\n", data->BufferLength, status));
 
@@ -319,6 +319,9 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		// print the buffer in kernel
 		kprintf("[+] infinityhook: Syshooker IRP Write: %ws.\n", data->NameBuffer);
+		if (wcscpy_s(Settings.NtWriteFileMagicName, MAX_PATH_SYSHOOKER, data->NameBuffer) != 0) {
+			status = STATUS_INVALID_PARAMETER;
+		}
 		
 
 		// return data used

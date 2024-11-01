@@ -9,7 +9,9 @@ int Error(const char* message) {
 
 int main() {
 	WriteHookData setHookData;
-	wchar_t path[] = L"test";
+	wchar_t path[MAX_PATH_SYSHOOKER];
+	printf("Enter path: ");
+	wscanf(L"%256ws", path);
 
 	size_t index = 0;
 	for (const auto& ch : path) {
