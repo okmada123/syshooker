@@ -17,6 +17,7 @@
 #include "stdafx.h"
 #include "entry.h"
 #include "infinityhook.h"
+#include "../Syshooker-Client/SyshookerCommon.h"
 
 static wchar_t IfhMagicFileName[] = L"ifh--";
 static wchar_t IfhMagicFileNameForWrite[] = L"wassup";
@@ -27,16 +28,44 @@ static NtCreateFile_t OriginalNtCreateFile = NULL;
 static UNICODE_STRING StringNtWriteFile = RTL_CONSTANT_STRING(L"NtWriteFile");
 static NtWriteFile_t OriginalNtWriteFile = NULL;
 
+UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
+
+NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+
 /*
 *	The entry point of the driver. Initializes infinity hook and
 *	sets up the driver's unload routine so that it can be gracefully 
 *	turned off.
 */
-extern "C" NTSTATUS DriverEntry(
-	_In_ PDRIVER_OBJECT DriverObject, 
-	_In_ PUNICODE_STRING RegistryPath)
-{
-	UNREFERENCED_PARAMETER(RegistryPath);
+extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath) {
+	//UNREFERENCED_PARAMETER(RegistryPath);
+
+	// IRP Routines
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = SyshookerCreateClose;
+	DriverObject->MajorFunction[IRP_MJ_WRITE] = SyshookerWrite;
+
+	// Device name
+	UNICODE_STRING deviceName = RTL_CONSTANT_STRING(L"\\Device\\Syshooker");
+
+	// create Device Object
+	PDEVICE_OBJECT DeviceObject;
+	NTSTATUS status = IoCreateDevice(DriverObject, 0, &deviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &DeviceObject);
+	if (!NT_SUCCESS(status)) {
+		KdPrint(("Failed to create device object (0x%08X)\n", status));
+		return status;
+	}
+
+	
+	status = IoCreateSymbolicLink(&symLink, &deviceName);
+	if (!NT_SUCCESS(status)) {
+		KdPrint(("Failed to create symbolic link (0x%08X)\n", status));
+
+		// need to free DeviceObject to clean up!!!
+		IoDeleteDevice(DeviceObject);
+		return status;
+	}
 
 	//
 	// Figure out when we built this last for debugging purposes.
@@ -86,15 +115,18 @@ extern "C" NTSTATUS DriverEntry(
 /*
 *	Turns off infinity hook.
 */
-void DriverUnload(
-	_In_ PDRIVER_OBJECT DriverObject)
-{
+void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	UNREFERENCED_PARAMETER(DriverObject);
 
 	//
 	// Unload infinity hook gracefully.
 	//
 	IfhRelease();
+
+	// Release driver resources (symlink, device object)
+	IoDeleteSymbolicLink(&symLink);
+	IoDeleteDevice(DriverObject->DeviceObject);
+
 
 	kprintf("\n[!] infinityhook: Unloading... BYE!\n");
 }
@@ -233,6 +265,11 @@ NTSTATUS DetourNtWriteFile(
 			if (wcsstr(fileName, IfhMagicFileNameForWrite))
 			{
 				kprintf("[+] infinityhook: Logging call for NtWriteFile for file: %wZ.\n", fileObject->FileName);
+				
+				// Change the first byte in the buffer to be 'X'
+				char* ptr = (char*)Buffer;
+				ptr[0] = 'X';
+
 				kprintf("[+] infinityhook: NtWriteFile buffer: %s.\n", (char*)Buffer);
 			}
 
@@ -246,4 +283,52 @@ NTSTATUS DetourNtWriteFile(
 	//
 	return OriginalNtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
 
+}
+
+NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	UNREFERENCED_PARAMETER(DeviceObject);
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
+	ULONG_PTR information = 0; // used bytes to return back to client
+
+	// get stack location of IRP
+	PIO_STACK_LOCATION irpSp = IoGetCurrentIrpStackLocation(Irp);
+
+	do {
+		if (irpSp->Parameters.Write.Length < sizeof(WriteHookData)) {
+			status = STATUS_BUFFER_TOO_SMALL;
+			break;
+		}
+
+		// make data buffer accessible as ThreadData pointer
+		WriteHookData* data = static_cast<WriteHookData*>(Irp->UserBuffer);
+
+		// check nullptr and valid values
+		if (data == nullptr || data->BufferLength <= 0 || data->BufferLength > 256) {
+			if (data != nullptr)
+				KdPrint(("BufferLength is probably wrong (%d). (0x%08X)\n", data->BufferLength, status));
+
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+
+		// print the buffer in kernel
+		kprintf("[+] infinityhook: Syshooker IRP Write: %ws.\n", data->NameBuffer);
+		
+
+		// return data used
+		information = sizeof(*data);
+	} while (FALSE);
+
+	// complete IRP
+	Irp->IoStatus.Status = status; // whatever status that is currently set
+	Irp->IoStatus.Information = information;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	return status;
 }
