@@ -20,6 +20,11 @@
 /// Structures and typedefs.
 ///
 
+struct SyshookerSettings {
+	wchar_t NtCreateFileMagicName[256];
+	wchar_t NtWriteFileMagicName[256];
+};
+
 typedef NTSTATUS(*NtCreateFile_t)(
 	_Out_ PHANDLE FileHandle,
 	_In_ ACCESS_MASK DesiredAccess,

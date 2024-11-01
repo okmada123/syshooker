@@ -19,9 +19,6 @@
 #include "infinityhook.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
 
-static wchar_t IfhMagicFileName[] = L"ifh--";
-static wchar_t IfhMagicFileNameForWrite[] = L"wassup";
-
 static UNICODE_STRING StringNtCreateFile = RTL_CONSTANT_STRING(L"NtCreateFile");
 static NtCreateFile_t OriginalNtCreateFile = NULL;
 
@@ -32,6 +29,8 @@ UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+
+SyshookerSettings Settings = {L"ifh--", L"wassup"};
 
 /*
 *	The entry point of the driver. Initializes infinity hook and
@@ -206,7 +205,7 @@ NTSTATUS DetourNtCreateFile(
 			//
 			// Does it contain our special file name?
 			//
-			if (wcsstr(ObjectName, IfhMagicFileName))
+			if (wcsstr(ObjectName, Settings.NtCreateFileMagicName))
 			{
 				kprintf("[+] infinityhook: Denying access to file: %wZ.\n", ObjectAttributes->ObjectName);
 
@@ -262,7 +261,7 @@ NTSTATUS DetourNtWriteFile(
 
 			//kprintf("[+] infinityhook: fileName: %ws\n", fileName);
 
-			if (wcsstr(fileName, IfhMagicFileNameForWrite))
+			if (wcsstr(fileName, Settings.NtWriteFileMagicName))
 			{
 				kprintf("[+] infinityhook: Logging call for NtWriteFile for file: %wZ.\n", fileObject->FileName);
 				
