@@ -25,6 +25,9 @@ static NtCreateFile_t OriginalNtCreateFile = NULL;
 static UNICODE_STRING StringNtWriteFile = RTL_CONSTANT_STRING(L"NtWriteFile");
 static NtWriteFile_t OriginalNtWriteFile = NULL;
 
+static UNICODE_STRING StringNtQueryDirectoryFile = RTL_CONSTANT_STRING(L"NtQueryDirectoryFile");
+static NtQueryDirectoryFile_t OriginalNtQueryDirectoryFile = NULL;
+
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
@@ -94,8 +97,13 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtWriteFile);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
-	else {
-		kprintf("[+] infinityhook: Function address found for: %wZ.\n", StringNtWriteFile);
+
+	// Find the original address of NtQueryDirectoryFile
+	OriginalNtQueryDirectoryFile = (NtQueryDirectoryFile_t)MmGetSystemRoutineAddress(&StringNtQueryDirectoryFile);
+	if (!OriginalNtQueryDirectoryFile)
+	{
+		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFile);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
 	//
@@ -160,10 +168,16 @@ void __fastcall SyscallStub(
 		*SystemCallFunction = DetourNtCreateFile;
 	}
 
-	// Also detour NtWriteFile
+	// NtWriteFile
 	if (*SystemCallFunction == OriginalNtWriteFile)
 	{
 		*SystemCallFunction = DetourNtWriteFile;
+	}
+
+	// NtQueryDirectoryFile
+	if (*SystemCallFunction == OriginalNtQueryDirectoryFile)
+	{
+		*SystemCallFunction = DetourNtQueryDirectoryFile;
 	}
 }
 
@@ -281,7 +295,28 @@ NTSTATUS DetourNtWriteFile(
 	// Call the original after logging.
 	//
 	return OriginalNtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+}
 
+// NtQueryDirectoryFile Detour
+NTSTATUS DetourNtQueryDirectoryFile(
+	_In_ HANDLE FileHandle,
+	_In_opt_ HANDLE Event,
+	_In_opt_ PIO_APC_ROUTINE ApcRoutine,
+	_In_opt_ PVOID ApcContext,
+	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+	_Out_ PVOID FileInformation,
+	_In_ ULONG Length,
+	_In_ FILE_INFORMATION_CLASS FileInformationClass,
+	_In_ BOOLEAN ReturnSingleEntry,
+	_In_opt_ PUNICODE_STRING FileName,
+	_In_ BOOLEAN RestartScan)
+{
+	kprintf("[+] infinityhook: NtQueryDirectoryFile: %wZ\n", FileName);
+
+	//
+	// Call the original after logging.
+	//
+	return OriginalNtQueryDirectoryFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
 }
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
