@@ -360,14 +360,22 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 
 	// if the call succeeded and the requested class is 2, cast the buffer pointer and try to read it
 	if (NT_SUCCESS(OriginalStatus) && FileInformationClass == 2) {
-		WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
 		PFILE_FULL_DIR_INFORMATION FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation;
 		//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
 
-		for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-			FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
+		while (1) {
+			WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+			for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
+			}
+			kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+
+			if (FileInformationPtr->NextEntryOffset == 0) break;
+			else {
+				// Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+				FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+			}
 		}
-		kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 	}
 	return OriginalStatus;
 }
