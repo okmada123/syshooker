@@ -28,6 +28,9 @@ static NtWriteFile_t OriginalNtWriteFile = NULL;
 static UNICODE_STRING StringNtQueryDirectoryFile = RTL_CONSTANT_STRING(L"NtQueryDirectoryFile");
 static NtQueryDirectoryFile_t OriginalNtQueryDirectoryFile = NULL;
 
+static UNICODE_STRING StringNtQueryDirectoryFileEx = RTL_CONSTANT_STRING(L"NtQueryDirectoryFileEx");
+static NtQueryDirectoryFileEx_t OriginalNtQueryDirectoryFileEx = NULL;
+
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
@@ -80,9 +83,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	//
 	DriverObject->DriverUnload = DriverUnload;
 
-	//
-	// Demo detouring of nt!NtCreateFile.
-	//
+	// HERE: find the address of a real syscall
+	// Detour NtCreateFile.
 	OriginalNtCreateFile = (NtCreateFile_t)MmGetSystemRoutineAddress(&StringNtCreateFile);
 	if (!OriginalNtCreateFile)
 	{
@@ -103,6 +105,14 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	if (!OriginalNtQueryDirectoryFile)
 	{
 		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFile);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+
+	// Find the original address of NtQueryDirectoryFileEx
+	OriginalNtQueryDirectoryFileEx = (NtQueryDirectoryFileEx_t)MmGetSystemRoutineAddress(&StringNtQueryDirectoryFileEx);
+	if (!OriginalNtQueryDirectoryFileEx)
+	{
+		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFileEx);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -156,6 +166,7 @@ void __fastcall SyscallStub(
 
 	UNREFERENCED_PARAMETER(SystemCallIndex);
 
+	// HERE: overwrite the syscall address
 	//
 	// In our demo, we care only about nt!NtCreateFile calls.
 	//
@@ -179,8 +190,15 @@ void __fastcall SyscallStub(
 	{
 		*SystemCallFunction = DetourNtQueryDirectoryFile;
 	}
+
+	// NtQueryDirectoryFileEx
+	if (*SystemCallFunction == OriginalNtQueryDirectoryFileEx)
+	{
+		*SystemCallFunction = DetourNtQueryDirectoryFileEx;
+	}
 }
 
+// HERE: write the detour function
 /*
 *	This function is invoked instead of nt!NtCreateFile. It will 
 *	attempt to filter a file by the "magic" file name.
@@ -317,6 +335,27 @@ NTSTATUS DetourNtQueryDirectoryFile(
 	// Call the original after logging.
 	//
 	return OriginalNtQueryDirectoryFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
+}
+
+// NtQueryDirectoryFile Detour
+NTSTATUS DetourNtQueryDirectoryFileEx(
+	_In_ HANDLE FileHandle,
+	_In_opt_ HANDLE Event,
+	_In_opt_ PIO_APC_ROUTINE ApcRoutine,
+	_In_opt_ PVOID ApcContext,
+	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+	_Out_ PVOID FileInformation,
+	_In_ ULONG Length,
+	_In_ FILE_INFORMATION_CLASS FileInformationClass,
+	_In_ ULONG QueryFlags,
+	_In_opt_ PUNICODE_STRING FileName)
+{
+	kprintf("[+] infinityhook: NtQueryDirectoryFileEx: filename: %wZ, class: %d\n", FileName, FileInformationClass);
+
+	//
+	// Call the original after logging.
+	//
+	return OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
 }
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
