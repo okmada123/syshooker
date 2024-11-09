@@ -352,10 +352,24 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 {
 	kprintf("[+] infinityhook: NtQueryDirectoryFileEx: filename: %wZ, class: %d\n", FileName, FileInformationClass);
 
+
 	//
-	// Call the original after logging.
+	// Call the original syscall so that the buffers are populated
 	//
-	return OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
+	NTSTATUS OriginalStatus = OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
+
+	// if the call succeeded and the requested class is 2, cast the buffer pointer and try to read it
+	if (NT_SUCCESS(OriginalStatus) && FileInformationClass == 2) {
+		WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+		PFILE_FULL_DIR_INFORMATION FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation;
+		//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
+
+		for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+			FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
+		}
+		kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+	}
+	return OriginalStatus;
 }
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
