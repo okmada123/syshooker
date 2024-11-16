@@ -78,7 +78,14 @@ typedef NTSTATUS(*NtQueryDirectoryFileEx_t)(
 	_In_ FILE_INFORMATION_CLASS FileInformationClass,
 	_In_ ULONG QueryFlags,
 	_In_opt_ PUNICODE_STRING FileName
-	);
+);
+
+typedef NTSTATUS(*NtOpenProcess_t)(
+	_Out_ PHANDLE ProcessHandle,
+	_In_ ACCESS_MASK AccessMask,
+	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_opt_ PCLIENT_ID ClientId
+);
 
 ///
 /// Forward declarations.
@@ -144,4 +151,11 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 	_In_ FILE_INFORMATION_CLASS FileInformationClass,
 	_In_ ULONG QueryFlags,
 	_In_opt_ PUNICODE_STRING FileName
+);
+
+NTSTATUS DetourNtOpenProcess(
+	_Out_ PHANDLE ProcessHandle,
+	_In_ ACCESS_MASK AccessMask,
+	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_opt_ PCLIENT_ID ClientId
 );

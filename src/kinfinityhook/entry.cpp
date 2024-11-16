@@ -31,6 +31,9 @@ static NtQueryDirectoryFile_t OriginalNtQueryDirectoryFile = NULL;
 static UNICODE_STRING StringNtQueryDirectoryFileEx = RTL_CONSTANT_STRING(L"NtQueryDirectoryFileEx");
 static NtQueryDirectoryFileEx_t OriginalNtQueryDirectoryFileEx = NULL;
 
+static UNICODE_STRING StringNtOpenProcess = RTL_CONSTANT_STRING(L"NtOpenProcess");
+static NtOpenProcess_t OriginalNtOpenProcess = NULL;
+
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
@@ -92,7 +95,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
-	// Detour NtWriteFile
+	// Find the original address of NtWriteFile
 	OriginalNtWriteFile = (NtWriteFile_t)MmGetSystemRoutineAddress(&StringNtWriteFile);
 	if (!OriginalNtWriteFile)
 	{
@@ -113,6 +116,14 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	if (!OriginalNtQueryDirectoryFileEx)
 	{
 		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFileEx);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+
+	// Find the original address of NtOpenProcess
+	OriginalNtOpenProcess = (NtOpenProcess_t)MmGetSystemRoutineAddress(&StringNtOpenProcess);
+	if (!OriginalNtOpenProcess)
+	{
+		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtOpenProcess);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -195,6 +206,12 @@ void __fastcall SyscallStub(
 	if (*SystemCallFunction == OriginalNtQueryDirectoryFileEx)
 	{
 		*SystemCallFunction = DetourNtQueryDirectoryFileEx;
+	}
+
+	// NtOpenProcess
+	if (*SystemCallFunction == OriginalNtOpenProcess)
+	{
+		*SystemCallFunction = DetourNtOpenProcess;
 	}
 }
 
@@ -923,6 +940,22 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 		}
 	}
 	return OriginalStatus;
+}
+
+NTSTATUS DetourNtOpenProcess(
+	_Out_ PHANDLE ProcessHandle,
+	_In_ ACCESS_MASK AccessMask,
+	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_opt_ PCLIENT_ID ClientId)
+{
+	//kprintf("[+] infinityhook: NtOpenProcess: ClientIdPtr %p\n", ClientId);
+	if (ClientId != nullptr) {
+		kprintf("[+] infinityhook: NtOpenProcess: ClientId: %p %p\n", ClientId->UniqueProcess, ClientId->UniqueThread);
+	}
+	//
+	// call the original.
+	//
+	return OriginalNtOpenProcess(ProcessHandle, AccessMask, ObjectAttributes, ClientId);
 }
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
