@@ -27,18 +27,6 @@ struct SyshookerSettings {
 	wchar_t NtQueryDirectoryFileExMagicName[MAX_PATH_SYSHOOKER];
 };
 
-typedef NTSTATUS(*NtWriteFile_t)(
-	_In_ HANDLE FileHandle,
-	_In_opt_ HANDLE Event,
-	_In_opt_ PIO_APC_ROUTINE ApcRoutine,
-	_In_opt_ PVOID ApcContext,
-	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
-	_In_ PVOID Buffer,
-	_In_ ULONG Length,
-	_In_opt_ PLARGE_INTEGER ByteOffset,
-	_In_opt_ PULONG Key
-);
-
 typedef NTSTATUS(*NtQueryDirectoryFile_t)(
 	_In_ HANDLE FileHandle,
 	_In_opt_ HANDLE Event,
@@ -78,18 +66,6 @@ void DriverUnload(
 void __fastcall SyscallStub(
 	_In_ unsigned int SystemCallIndex, 
 	_Inout_ void** SystemCallFunction);
-
-NTSTATUS DetourNtWriteFile(
-	_In_ HANDLE FileHandle,
-	_In_opt_ HANDLE Event,
-	_In_opt_ PIO_APC_ROUTINE ApcRoutine,
-	_In_opt_ PVOID ApcContext,
-	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
-	_In_ PVOID Buffer,
-	_In_ ULONG Length,
-	_In_opt_ PLARGE_INTEGER ByteOffset,
-	_In_opt_ PULONG Key
-);
 
 NTSTATUS DetourNtQueryDirectoryFile(
 	_In_ HANDLE FileHandle,
