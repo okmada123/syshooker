@@ -96,6 +96,7 @@
     <ClInclude Include="NtCreateFile.h" />
     <ClInclude Include="NtOpenProcess.h" />
     <ClInclude Include="NtQueryDirectoryFile.h" />
+    <ClInclude Include="NtQueryDirectoryFileEx.h" />
     <ClInclude Include="NtWriteFile.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="stdafx.h" />
