@@ -93,6 +93,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="entry.h" />
+    <ClInclude Include="NtCreateFile.h" />
+    <ClInclude Include="NtOpenProcess.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

