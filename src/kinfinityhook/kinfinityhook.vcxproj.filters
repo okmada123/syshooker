@@ -45,5 +45,8 @@
     <ClInclude Include="NtWriteFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NtQueryDirectoryFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
