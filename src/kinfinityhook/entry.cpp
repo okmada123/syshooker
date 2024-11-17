@@ -18,6 +18,7 @@
 #include "entry.h"
 #include "infinityhook.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
+#include "Settings.h"
 
 #include "NtCreateFile.h"
 #include "NtWriteFile.h"

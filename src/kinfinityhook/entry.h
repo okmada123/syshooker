@@ -21,12 +21,6 @@
 /// Structures and typedefs.
 ///
 
-struct SyshookerSettings {
-	wchar_t NtCreateFileMagicName[MAX_PATH_SYSHOOKER];
-	wchar_t NtWriteFileMagicName[MAX_PATH_SYSHOOKER];
-	wchar_t NtQueryDirectoryFileExMagicName[MAX_PATH_SYSHOOKER];
-};
-
 typedef NTSTATUS(*NtQueryDirectoryFile_t)(
 	_In_ HANDLE FileHandle,
 	_In_opt_ HANDLE Event,
