@@ -1,4 +1,12 @@
 #pragma once
+#include "Settings.h"
+
+typedef NTSTATUS(*NtOpenProcess_t)(
+	_Out_ PHANDLE ProcessHandle,
+	_In_ ACCESS_MASK AccessMask,
+	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_opt_ PCLIENT_ID ClientId
+);
 
 static UNICODE_STRING StringNtOpenProcess = RTL_CONSTANT_STRING(L"NtOpenProcess");
 static NtOpenProcess_t OriginalNtOpenProcess = NULL;

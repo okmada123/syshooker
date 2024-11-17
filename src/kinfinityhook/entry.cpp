@@ -37,8 +37,6 @@ UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 
-//SyshookerSettings Settings = {L"ifh--", L"wassup", L"hideme"};
-
 /*
 *	The entry point of the driver. Initializes infinity hook and
 *	sets up the driver's unload routine so that it can be gracefully 
