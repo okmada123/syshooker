@@ -19,7 +19,7 @@ NTSTATUS DetourNtOpenProcess(
 {
 	//kprintf("[+] infinityhook: NtOpenProcess: ClientIdPtr %p\n", ClientId);
 	if (ClientId != nullptr) {
-		kprintf("[+] infinityhook: NtOpenProcess: ClientId: %p %p\n", ClientId->UniqueProcess, ClientId->UniqueThread);
+		//kprintf("[+] infinityhook: NtOpenProcess: ClientId: %p %p\n", ClientId->UniqueProcess, ClientId->UniqueThread);
 	}
 	//
 	// call the original.

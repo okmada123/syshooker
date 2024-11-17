@@ -1,4 +1,5 @@
 #pragma once
+#define SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS 5 // defined in 'ntint.h'
 
 struct SyshookerSettings {
 	wchar_t NtCreateFileMagicName[MAX_PATH_SYSHOOKER];
