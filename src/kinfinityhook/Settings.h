@@ -5,6 +5,12 @@ struct SyshookerSettings {
 	wchar_t NtCreateFileMagicName[MAX_PATH_SYSHOOKER];
 	wchar_t NtWriteFileMagicName[MAX_PATH_SYSHOOKER];
 	wchar_t NtQueryDirectoryFileExMagicName[MAX_PATH_SYSHOOKER];
+	wchar_t NtQuerySystemInformationProcessMagicName[MAX_PATH_SYSHOOKER];
 };
 
-SyshookerSettings Settings = { L"ifh--", L"wassup", L"hideme" };
+SyshookerSettings Settings = {
+	L"ifh--",		// NtCreateFileMagicName
+	L"wassup",		// NtWriteFileMagicName
+	L"hideme",		// NtQueryDirectoryFileExMagicName
+	L"Test1.exe",	// NtQuerySystemInformationProcessMagicName
+};

