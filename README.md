@@ -9,11 +9,11 @@ To compile the solution, the following components were used:
 - Windows Driver Kit (10.0.26100)
 - Windows Driver Kit extension for Visual Studio
 
-Windows SDK and Windows Driver Kit have to have the same version. Newer that the one that we have used should probably be okay. The latest version can be downloaded here: https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk.
+Windows SDK and Windows Driver Kit have to have the same version. Newer than the one that we have used should probably be okay. The latest version can be downloaded here: https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk.
 ### Loading the driver
 
 > [!WARNING]
-> We do not recommend installing and loading the driver on your host machine. It is adviesd to use a virtual machine instead.
+> We do not recommend installing and loading the driver on your host machine. It is advised to use a virtual machine instead.
 
 #### Suitable Windows 10 build
 The InfinityHook exploit should work up to build 1909 of Windows 10. The solution **has been developed and tested on Windows 10 version 1809, build
