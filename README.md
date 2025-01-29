@@ -1,5 +1,9 @@
 # Syshooker
-Kernel driver that allows system call hooking using [InfinityHook](https://github.com/everdox/InfinityHook). Developed as an anti-anti-debug solution. **Use at your own risk.**
+Kernel driver that allows system call hooking using [InfinityHook](https://github.com/everdox/InfinityHook). Developed as an anti-anti-debug solution.
+
+**Use at your own risk.**
+
+![process hiding](/assets/process-hiding.gif)
 
 ## Getting started
 ### Compile
