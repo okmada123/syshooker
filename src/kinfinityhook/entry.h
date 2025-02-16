@@ -26,6 +26,6 @@ extern "C" DRIVER_INITIALIZE DriverEntry;
 void DriverUnload(
 	_In_ PDRIVER_OBJECT DriverObject);
 
-void __fastcall SyscallStub(
+void __fastcall SyscallCallback(
 	_In_ unsigned int SystemCallIndex, 
 	_Inout_ void** SystemCallFunction);
