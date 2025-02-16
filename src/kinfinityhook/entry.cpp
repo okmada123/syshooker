@@ -140,7 +140,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	// Initialize infinity hook. Each system call will be redirected
 	// to our syscall stub.
 	//
-	NTSTATUS Status = IfhInitialize(SyscallStub);
+	NTSTATUS Status = IfhInitialize(SyscallCallback);
 	if (!NT_SUCCESS(Status))
 	{
 		kprintf("[-] infinityhook: Failed to initialize with status: 0x%lx.\n", Status);
@@ -176,7 +176,7 @@ void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
 /*
 *	For each usermode syscall, this stub will be invoked.
 */
-void __fastcall SyscallStub(
+void __fastcall SyscallCallback(
 	_In_ unsigned int SystemCallIndex, 
 	_Inout_ void** SystemCallFunction)
 {
