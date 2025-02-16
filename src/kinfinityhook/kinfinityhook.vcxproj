@@ -94,6 +94,7 @@
   <ItemGroup>
     <ClInclude Include="entry.h" />
     <ClInclude Include="NtCreateFile.h" />
+    <ClInclude Include="NtOpenKey.h" />
     <ClInclude Include="NtOpenProcess.h" />
     <ClInclude Include="NtQueryDirectoryFile.h" />
     <ClInclude Include="NtQueryDirectoryFileEx.h" />

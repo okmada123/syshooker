@@ -9,8 +9,8 @@ struct SyshookerSettings {
 };
 
 SyshookerSettings Settings = {
-	L"ifh--",		// NtCreateFileMagicName
+	L"hideme",		// NtCreateFileMagicName
 	L"wassup",		// NtWriteFileMagicName
 	L"hideme",		// NtQueryDirectoryFileExMagicName
-	L"Test1.exe",	// NtQuerySystemInformationProcessMagicName
+	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
 };
