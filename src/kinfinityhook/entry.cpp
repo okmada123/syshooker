@@ -17,10 +17,9 @@
 #include "stdafx.h"
 #include "entry.h"
 #include "infinityhook.h"
+#include "ssdt.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
-#include "mm.h"
-#include "img.h"
 
 // Hooked Syscalls
 #include "NtCreateFile.h"
@@ -152,32 +151,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		CALLBACK_OVERWRITE_ENABLED = 1;
 	}
 
-	PVOID NtBaseAddress = NULL;
-	ULONG SizeOfNt = 0;
-	NtBaseAddress = ImgGetBaseAddress(NULL, &SizeOfNt);
-	if (!NtBaseAddress) {
-		kprintf("[-] infinityhook: Failed to resolve NtBaseAddress.\n");
-		return STATUS_FAILED_DRIVER_ENTRY;
-	}
-	else {
-		kprintf("[+] infinityhook: NtBaseAddress: %p and size %d.\n", NtBaseAddress, SizeOfNt);
-	}
-
-	// size of ntkrnlmp.exe on W10 1809 17763.1
-	// we don't actually need this because ImgGetBaseAddress
-	// gets the size as well
-	// const size_t NtkrnlmpImageSize = 0x009F1000;
-
-	/*
-		kd> dps kiservicetable L2
-		fffff806`54205e10  fd13b200`fccb5104
-		fffff806`54205e18  03d23900`0219a602
-	*/
-	const UCHAR SsdtOffsetByteSignature[] = {
-		0x04, 0x51, 0xcb, 0xfc, 0x00, 0xb2, 0x13, 0xfd, // first SSDT offset
-	};
-
-	const void* SsdtAddress = MmSearchMemory(NtBaseAddress, SizeOfNt, SsdtOffsetByteSignature, RTL_NUMBER_OF(SsdtOffsetByteSignature));
+	const void* SsdtAddress = GetSsdtAddress();
 	if (!SsdtAddress) {
 		kprintf("[-] infinityhook: SSDT pattern not found.\n");
 	}

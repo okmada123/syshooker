@@ -25,6 +25,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ssdt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -55,6 +58,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NtOpenKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ssdt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
