@@ -159,6 +159,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		kprintf("[-] infinityhook: SSDT address: %p\n", SsdtAddress);
 	}
 
+	const void* TestAddress = GetSyscallAddress(0x55, (PCHAR)SsdtAddress);
+
 	return Status;
 }
 

@@ -29,3 +29,11 @@ const void* GetSsdtAddress() {
 
 	return MmSearchMemory(NtBaseAddress, SizeOfNt, SsdtOffsetByteSignature, RTL_NUMBER_OF(SsdtOffsetByteSignature));
 }
+
+const void* GetSyscallAddress(size_t SyscallSsdtIndex, PCHAR SsdtAddress) {
+	PVOID OffsetAddress = (PVOID)(SsdtAddress + SyscallSsdtIndex * 4);
+	int offset = *(int*)OffsetAddress;
+	kprintf("[+] infinityhook: Offset for syscall is on address: %p.\n", OffsetAddress);
+	kprintf("[+] infinityhook: Offset value: %d %x.\n", offset, offset);
+	return NULL;
+}
