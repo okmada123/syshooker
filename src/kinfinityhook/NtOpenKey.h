@@ -20,7 +20,7 @@ NTSTATUS DetourNtOpenKey(
 		ObjectAttributes->ObjectName &&
 		ObjectAttributes->ObjectName->Buffer)
 	{
-		kprintf("[+] infinityhook: NtOpenKey name: %wZ\n", ObjectAttributes->ObjectName);
+		kprintf("[+] infinityhook: NtOpenKey length: %d, name: %wZ\n", ObjectAttributes->ObjectName->Length, ObjectAttributes->ObjectName);
 		
 		/*PWCHAR ObjectName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 		if (ObjectName)

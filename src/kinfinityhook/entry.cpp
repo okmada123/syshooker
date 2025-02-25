@@ -129,13 +129,40 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
-	//OriginalNtOpenKey = (NtOpenKey_t)0xfffff80320215790;
-	//if (!OriginalNtOpenKey)
-	//{
-	//	//kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtOpenKey);
-	//	return STATUS_ENTRYPOINT_NOT_FOUND;
-	//}
-	//else kprintf("[-] infinityhook: NtOpenKey address: %p.\n", OriginalNtOpenKey);
+
+	// for the syscalls that are not exported, we cannot use MmGetSystemRoutineAddress
+	// we need to resolve their address from SSDT
+
+	const void* SsdtAddress = GetSsdtAddress();
+	if (!SsdtAddress) {
+		kprintf("[-] infinityhook: SSDT pattern not found.\n");
+	}
+	else {
+		kprintf("[+] infinityhook: SSDT address: %p\n", SsdtAddress);
+	}
+
+	OriginalNtOpenKey = (NtOpenKey_t)GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
+	if (!OriginalNtOpenKey) {
+		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtOpenKey);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else kprintf("[+] infinityhook: NtOpenKey address: %p.\n", OriginalNtOpenKey);
+
+	// Try to find addresses of the registry-related syscalls
+	// const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
+	// kprintf("[+] infinityhook: NtOpenKey address: %p\n", NtOpenKeyAddr);
+
+	/*const void* NtOpenKeyExAddr = GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
+	kprintf("[+] infinityhook: NtOpenKeyEx address: %p\n", NtOpenKeyExAddr);
+
+	const void* NtQueryKeyAddr = GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
+	kprintf("[+] infinityhook: NtQueryKey address: %p\n", NtQueryKeyAddr);
+
+	const void* NtQueryValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYVALUEKEY, (PCHAR)SsdtAddress);
+	kprintf("[+] infinityhook: NtQueryValueKey address: %p\n", NtQueryValueKeyAddr);
+
+	const void* NtQueryMultipleValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYMULTIPLEVALUEKEY, (PCHAR)SsdtAddress);
+	kprintf("[+] infinityhook: NtQueryMultipleValueKey address: %p\n", NtQueryMultipleValueKeyAddr);*/
 
 	//
 	// Initialize infinity hook. Each system call will be redirected
@@ -150,30 +177,6 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	{
 		CALLBACK_OVERWRITE_ENABLED = 1;
 	}
-
-	const void* SsdtAddress = GetSsdtAddress();
-	if (!SsdtAddress) {
-		kprintf("[-] infinityhook: SSDT pattern not found.\n");
-	}
-	else {
-		kprintf("[+] infinityhook: SSDT address: %p\n", SsdtAddress);
-	}
-
-	// Try to find addresses of the registry-related syscalls
-	const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtOpenKey address: %p\n", NtOpenKeyAddr);
-
-	const void* NtOpenKeyExAddr = GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtOpenKeyEx address: %p\n", NtOpenKeyExAddr);
-
-	const void* NtQueryKeyAddr = GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryKey address: %p\n", NtQueryKeyAddr);
-
-	const void* NtQueryValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryValueKey address: %p\n", NtQueryValueKeyAddr);
-
-	const void* NtQueryMultipleValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYMULTIPLEVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryMultipleValueKey address: %p\n", NtQueryMultipleValueKeyAddr);
 	
 	return Status;
 }
