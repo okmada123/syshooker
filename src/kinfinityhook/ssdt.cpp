@@ -33,10 +33,10 @@ const void* GetSsdtAddress() {
 const void* GetSyscallAddress(size_t SyscallSsdtIndex, PCHAR SsdtAddress) {
 	PVOID OffsetAddress = (PVOID)(SsdtAddress + SyscallSsdtIndex * 4);
 	int offset = *(int*)OffsetAddress;
-	kprintf("[+] infinityhook: Offset for syscall is on address: %p.\n", OffsetAddress);
-	kprintf("[+] infinityhook: Offset value: %d %x.\n", offset, offset);
+	// kprintf("[+] infinityhook: Offset for syscall is on address: %p.\n", OffsetAddress);
+	// kprintf("[+] infinityhook: Offset value: %d %x.\n", offset, offset);
 
 	PVOID SyscallAddress = (SsdtAddress + (offset >> 4));
-	kprintf("[+] infinityhook: Syscall address: %p\n", SyscallAddress);
+	// kprintf("[+] infinityhook: Syscall address: %p\n", SyscallAddress);
 	return SyscallAddress;
 }
