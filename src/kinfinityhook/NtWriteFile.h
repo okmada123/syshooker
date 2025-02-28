@@ -34,7 +34,7 @@ NTSTATUS DetourNtWriteFile(
 	PWCHAR fileName = NULL;
 
 	if (!NT_SUCCESS(status)) {
-		kprintf("[+] infinityhook: WriteFile status not success :(!\n");
+		kprintf("[+] infinityhook: WriteFile status not success when obtaining Object info by Handle :(!\n");
 	}
 	else {
 		//kprintf("[+] infinityhook: WriteFile status success!!!\n");
