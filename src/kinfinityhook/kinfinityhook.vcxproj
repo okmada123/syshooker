@@ -99,6 +99,7 @@
     <ClInclude Include="NtOpenProcess.h" />
     <ClInclude Include="NtQueryDirectoryFile.h" />
     <ClInclude Include="NtQueryDirectoryFileEx.h" />
+    <ClInclude Include="NtQueryKey.h" />
     <ClInclude Include="NtQuerySystemInformation.h" />
     <ClInclude Include="NtWriteFile.h" />
     <ClInclude Include="Settings.h" />

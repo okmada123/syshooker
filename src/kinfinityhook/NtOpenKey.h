@@ -10,6 +10,8 @@ typedef NTSTATUS(*NtOpenKey_t)(
 static UNICODE_STRING StringNtOpenKey = RTL_CONSTANT_STRING(L"NtOpenKey");
 static NtOpenKey_t OriginalNtOpenKey = NULL;
 
+// STATUS_OBJECT_NAME_NOT_FOUND - return this status to indicate that the key does not exist
+
 NTSTATUS DetourNtOpenKey(
 	_Out_ PHANDLE pKeyHandle,
 	_In_ ACCESS_MASK DesiredAccess,
@@ -38,5 +40,10 @@ NTSTATUS DetourNtOpenKey(
 		}*/
 		//kprintf("[+] infinityhook: NtOpenKey ObjectAttributes->ObjectName: %ws\n", NameBuffer);
 	}
+
+	//NTSTATUS result = OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
+	//kprintf("[+] infinityhook: NtOpenKey status: %x %lu\n", result, result);
+	
+	// call the original
 	return OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
 }
