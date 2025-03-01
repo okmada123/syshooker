@@ -41,9 +41,10 @@ NTSTATUS DetourNtOpenKey(
 		//kprintf("[+] infinityhook: NtOpenKey ObjectAttributes->ObjectName: %ws\n", NameBuffer);
 	}
 
-	//NTSTATUS result = OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
-	//kprintf("[+] infinityhook: NtOpenKey status: %x %lu\n", result, result);
+	NTSTATUS result = OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
+	kprintf("[+] infinityhook: NtOpenKey status: %x, handle: %p %p\n", result, pKeyHandle, *pKeyHandle);
+	return result;
 	
 	// call the original
-	return OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
+	//return OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
 }

@@ -66,5 +66,8 @@
     <ClInclude Include="NtQueryKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NtEnumerateKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

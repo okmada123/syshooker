@@ -6,6 +6,7 @@ struct SyshookerSettings {
 	wchar_t NtWriteFileMagicName[MAX_PATH_SYSHOOKER];
 	wchar_t NtQueryDirectoryFileExMagicName[MAX_PATH_SYSHOOKER];
 	wchar_t NtQuerySystemInformationProcessMagicName[MAX_PATH_SYSHOOKER];
+	wchar_t RegistryKeyMagicName[MAX_PATH_SYSHOOKER];
 };
 
 SyshookerSettings Settings = {
@@ -13,4 +14,5 @@ SyshookerSettings Settings = {
 	L"wassup",		// NtWriteFileMagicName
 	L"hideme",		// NtQueryDirectoryFileExMagicName
 	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
+	L"hideme",		// RegistryKeyMagicName
 };
