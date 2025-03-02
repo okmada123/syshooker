@@ -1,5 +1,6 @@
 #pragma once
 #include "Settings.h"
+#include "RegistryUtils.h"
 
 // source: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ne-wdm-_key_information_class
 //typedef enum _KEY_INFORMATION_CLASS {
@@ -35,6 +36,7 @@ NTSTATUS DetourNtQueryKey(
 	_In_ ULONG Length,
 	_Out_ PULONG ResultLength)
 {
+	PrintRegistryKeyHandleInformation(KeyHandle, L"NtQueryKey");
 	return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 	//if (KeyInformationClass == 3) {
 	//	NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
