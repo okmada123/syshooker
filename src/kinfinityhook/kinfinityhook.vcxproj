@@ -86,7 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entry.cpp" />
-    <ClCompile Include="RegistryUtils.cpp" />
+    <ClCompile Include="utils.cpp" />
     <ClCompile Include="ssdt.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -104,7 +104,7 @@
     <ClInclude Include="NtQueryKey.h" />
     <ClInclude Include="NtQuerySystemInformation.h" />
     <ClInclude Include="NtWriteFile.h" />
-    <ClInclude Include="RegistryUtils.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="ssdt.h" />
     <ClInclude Include="stdafx.h" />

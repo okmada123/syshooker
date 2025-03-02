@@ -1,6 +1,6 @@
 #pragma once
 #include "Settings.h"
-#include "RegistryUtils.h"
+#include "utils.h"
 
 // source: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ne-wdm-_key_information_class
 //typedef enum _KEY_INFORMATION_CLASS {
