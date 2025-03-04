@@ -16,3 +16,5 @@ SyshookerSettings Settings = {
 	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
 	L"hideme",		// RegistryKeyMagicName
 };
+
+//extern SyshookerSettings Settings;

