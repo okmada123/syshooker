@@ -21,6 +21,14 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
+SyshookerSettings Settings = {
+	L"hideme",		// NtCreateFileMagicName
+	L"wassup",		// NtWriteFileMagicName
+	L"hideme",		// NtQueryDirectoryFileExMagicName
+	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
+	L"hideme",		// RegistryKeyMagicName
+};
+
 // Hooked Syscalls
 #include "NtCreateFile.h"
 #include "NtWriteFile.h"

