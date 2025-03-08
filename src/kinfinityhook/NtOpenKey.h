@@ -42,7 +42,7 @@ NTSTATUS DetourNtOpenKey(
 	}
 
 	NTSTATUS result = OriginalNtOpenKey(pKeyHandle, DesiredAccess, ObjectAttributes);
-	kprintf("[+] infinityhook: NtOpenKey status: %x, handle: %p %p\n", result, pKeyHandle, *pKeyHandle);
+	//kprintf("[+] infinityhook: NtOpenKey status: %x, handle: %p %p\n", result, pKeyHandle, *pKeyHandle);
 	return result;
 	
 	// call the original

