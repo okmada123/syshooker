@@ -31,7 +31,7 @@ NTSTATUS DetourNtOpenKey(
 			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 		}*/
 
-;		//kprintf("[+] infinityhook: NtOpenKey ObjectAttributes->ObjectName->Length: %d\n", ObjectAttributes->ObjectName->Length);
+		//kprintf("[+] infinityhook: NtOpenKey ObjectAttributes->ObjectName->Length: %d\n", ObjectAttributes->ObjectName->Length);
 		// copy the name to our null-terminated buffer (dumb way, just testing what it contains...)
 		/*wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
 		size_t NameLength = ObjectAttributes->ObjectName->Length;

