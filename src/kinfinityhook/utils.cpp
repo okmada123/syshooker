@@ -3,6 +3,39 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
+NameNode* CreateNameNode(wchar_t* NameBuffer, size_t NameLength) {
+    if (!NameBuffer || NameLength <= 0) {
+        kprintf("[-] CreateNameNode: NameBuffer (%p) or NameLength (%llu) invalid.\n", NameBuffer, NameLength);
+        return nullptr;
+    }
+
+    NameNode* result = (NameNode*)ExAllocatePool(NonPagedPool, sizeof(NameNode));
+    if (!result) {
+        kprintf("[-] CreateNameNode: Allocation failed for NameNode struct.\n");
+        return nullptr;
+    }
+
+    result->NameBuffer = (wchar_t*)ExAllocatePool(NonPagedPool, (NameLength + 1) * sizeof(wchar_t)); // NameLength + 1 to make space for \0
+    if (!result->NameBuffer) {
+        kprintf("[-] CreateNameNode: Allocation failed for NameNode->NameBuffer.\n");
+        ExFreePool(result);
+        return nullptr;
+    }
+
+    // copy name from NameBuffer to result->NameBuffer (will be null-terminated)
+    wcsncpy(result->NameBuffer, NameBuffer, NameLength + 1);
+    result->NameLength = NameLength;
+    result->Next = nullptr;
+
+    return result;
+}
+
+void FreeNameNode(NameNode* nn) {
+    ExFreePool(nn->NameBuffer);
+    ExFreePool(nn);
+    return;
+}
+
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName) {
 	// TODO - dynamic allocation
 	PVOID KeyInformationBuffer[100] = { 0 };
@@ -22,7 +55,7 @@ void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingF
 	}
 }
 
-// 
+// enumerates registry key (from KeyHandle) to find out if it contains anything that should be hidden
 NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubkeyIndexesCount, _Out_ PULONG OkSubkeyIndexesCount, _Out_ PULONG* OkSubkeyIndexes) {
     UNREFERENCED_PARAMETER(OkSubkeyIndexes);
 
@@ -107,7 +140,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
             }
             else {
                 //kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
-                (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex;
+                (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex; // compiler says buffer overrun but I do not believe it
                 *OkSubkeyIndexesCount += 1;
             }
         }

