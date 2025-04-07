@@ -82,7 +82,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return status;
 	}
 	kprintf("[+] syshooker DeviceObject address: %p\n", DeviceObject);
-	//kprintf("[+] syshooker DriverUnload address: %p\n", DriverUnload);
+	kprintf("[+] syshooker DriverUnload address: %p\n", DriverUnload);
 	
 	status = IoCreateSymbolicLink(&symLink, &deviceName);
 	if (!NT_SUCCESS(status)) {
@@ -223,7 +223,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	}
 	else
 	{
-		//CALLBACK_OVERWRITE_ENABLED = 1; // TODO - uncomment here to start hooking
+		CALLBACK_OVERWRITE_ENABLED = 1; // TODO - uncomment here to start hooking
 	}
 	
 	return Status;
@@ -393,7 +393,6 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	Irp->IoStatus.Information = information;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	kprintf("[+] syshooker IRQ_WRITE - before return\n");
-	CALLBACK_OVERWRITE_ENABLED = 0;
 	return status;
 }
 

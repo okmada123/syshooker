@@ -41,7 +41,7 @@ NTSTATUS DetourNtQueryKey(
 			NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 			if (NT_SUCCESS(status)) {
 				PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
-				kprintf("[+] infinityhook: NtQueryKey KeyCachedInformation: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
+				//kprintf("[+] infinityhook: NtQueryKey KeyCachedInformation: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
 
 				// now check if there are any subkeys that should be hidden
 				ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
@@ -52,7 +52,7 @@ NTSTATUS DetourNtQueryKey(
 					// TODO - do something if this fails?
 				}
 
-				kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+				//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 				
 				// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 				ExFreePool(OkSubkeyIndexesPtr);
@@ -68,7 +68,7 @@ NTSTATUS DetourNtQueryKey(
 		NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 		if (NT_SUCCESS(status)) {
 			PKEY_FULL_INFORMATION KeyFullInformationPtr = (PKEY_FULL_INFORMATION)KeyInformation;
-			kprintf("[+] infinityhook: NtQueryKey KeyFullInformation: SubKeys: %ul\n", KeyFullInformationPtr->SubKeys);
+			//kprintf("[+] infinityhook: NtQueryKey KeyFullInformation: SubKeys: %ul\n", KeyFullInformationPtr->SubKeys);
 
 			// now check if there are any subkeys that should be hidden
 			ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
@@ -79,7 +79,7 @@ NTSTATUS DetourNtQueryKey(
 				// TODO - do something if this fails?
 			}
 
-			kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+			//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 
 			// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 			ExFreePool(OkSubkeyIndexesPtr);
