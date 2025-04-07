@@ -7,20 +7,20 @@ struct WriteHookData {
 	int BufferLength;
 };
 
-enum Operation {
-	ADD,
-	REMOVE
-};
+typedef enum {
+	OPERATION_ADD,
+	OPERATION_REMOVE
+} Operation;
 
-enum Target {
-	FILENAME,
-	PROCESS,
-	REGISTRY
-};
+typedef enum {
+	TARGET_FILE,
+	TARGET_PROCESS,
+	TARGET_REGISTRY
+} Target;
 
 struct SyshookerApiWriteRequest {
-	enum Operation;
-	enum Target;
+	Operation Operation;
+	Target Target;
 	wchar_t NameBuffer[MAX_PATH_SYSHOOKER];
 	size_t NameLength;
 };

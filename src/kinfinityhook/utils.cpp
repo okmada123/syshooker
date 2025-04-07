@@ -3,7 +3,7 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
-NameNode* CreateNameNode(wchar_t* NameBuffer, size_t NameLength) {
+NameNode* CreateNameNode(const wchar_t* NameBuffer, const size_t NameLength) {
     if (!NameBuffer || NameLength <= 0) {
         kprintf("[-] CreateNameNode: NameBuffer (%p) or NameLength (%llu) invalid.\n", NameBuffer, NameLength);
         return nullptr;

@@ -20,6 +20,7 @@
 #include "ssdt.h"
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
+#include "utils.h"
 
 // old settings - delete
 SyshookerSettings Settings = {
@@ -81,8 +82,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		KdPrint(("Failed to create device object (0x%08X)\n", status));
 		return status;
 	}
-	kprintf("[+] syshooker DeviceObject address: %p\n", DeviceObject);
-	kprintf("[+] syshooker DriverUnload address: %p\n", DriverUnload);
+	//kprintf("[+] syshooker DeviceObject address: %p\n", DeviceObject);
+	//kprintf("[+] syshooker DriverUnload address: %p\n", DriverUnload);
 	
 	status = IoCreateSymbolicLink(&symLink, &deviceName);
 	if (!NT_SUCCESS(status)) {
@@ -378,9 +379,46 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		// print the buffer in kernel
 		kprintf("[+] syshooker IRQ_WRITE: NameBuffer: %ws.\n", request->NameBuffer);
 
-		//if (wcscpy_s(Settings.NtWriteFileMagicName, MAX_PATH_SYSHOOKER, request->NameBuffer) != 0) {
-		//	status = STATUS_INVALID_PARAMETER;
-		//}
+		if (request->Operation == OPERATION_ADD) {
+			NameNode* NewNameNode = CreateNameNode(request->NameBuffer, request->NameLength);
+			if (NewNameNode == nullptr) {
+				kprintf("[-] syshooker IRQ_WRITE: Failed to allocate newNameNode.\n");
+				status = STATUS_INVALID_PARAMETER;
+				break;
+			}
+
+			kprintf("[+] syshooker IRQ_WRITE: newNameNode: %ws.\n", NewNameNode->NameBuffer);
+
+			NameNode* llHead = nullptr;
+			if (request->Target == TARGET_FILE) {
+				llHead = SettingsNew.FileMagicNamesHead;
+				kprintf("[+] syshooker IRQ_WRITE: should add to FILE. Head is now %p\n", llHead);
+			}
+			else if (request->Target == TARGET_PROCESS) {
+				llHead = SettingsNew.ProcessMagicNamesHead;
+				kprintf("[+] syshooker IRQ_WRITE: should add to PROCESS. Head is now %p\n", llHead);
+			}
+			else if (request->Target == TARGET_REGISTRY) {
+				llHead = SettingsNew.RegistryMagicNamesHead;
+				kprintf("[+] syshooker IRQ_WRITE: should add to REGISTRY. Head is now %p\n", llHead);
+			}
+			else {
+				status = STATUS_INVALID_PARAMETER;
+				FreeNameNode(NewNameNode);
+				break;
+			}
+
+			// appendNameNode(llHead, NewNameNode)
+
+			FreeNameNode(NewNameNode); // remove this and implement AppendNameNode
+		}
+		else if (request->Operation == OPERATION_REMOVE) {
+			// TODO
+		}
+		else {
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
 		
 
 		// return data used

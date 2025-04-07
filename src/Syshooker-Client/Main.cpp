@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
 		}
 		request.NameBuffer[index] = L'\0';
 		request.NameLength = index;
+		request.Operation = OPERATION_ADD;
+		request.Target = TARGET_FILE;
 
 
 		DWORD returned;
