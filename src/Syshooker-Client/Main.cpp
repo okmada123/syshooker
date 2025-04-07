@@ -49,6 +49,9 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	CloseHandle(hDevice);
+	BOOL closeStatus = CloseHandle(hDevice);
+	printf("CloseStatus: %d (success == nonzero status)\n", closeStatus);
+
+
 	return 0;
 }

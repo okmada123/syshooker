@@ -71,7 +71,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
     // required buffer size
     status = ZwQueryKey(KeyHandle, KeyFullInformation, NULL, 0, &resultLength);
     if (status != STATUS_BUFFER_TOO_SMALL) {
-        kprintf("[-] RegistryKeyHideInformation: Should not have happened.\n");
+        kprintf("[-] RegistryKeyHideInformation: Should not have happened, ZwQueryKey status: %d.\n", status);
         return status;
     }
 

