@@ -390,8 +390,12 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 			status = appendNameNode(request->Target, NewNameNode);
 			if (!NT_SUCCESS(status)) {
+				kprintf("[-] syshooker IRQ_WRITE: Failed to append newNameNode.\n");
 				FreeNameNode(NewNameNode);
 				break;
+			}
+			else {
+				kprintf("[+] syshooker IRQ_WRITE: newNameNode appended successfully.\n");
 			}
 		}
 		else if (request->Operation == OPERATION_REMOVE) {

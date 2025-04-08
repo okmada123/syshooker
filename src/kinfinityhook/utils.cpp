@@ -72,15 +72,10 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
         return STATUS_INVALID_PARAMETER;
     }
 
-
-    size_t count = 0;
     // traverse the linked list to the end
     while (llHead->Next != nullptr) {
         llHead = llHead->Next;
-        count++;
     }
-
-    kprintf("[+] syshooker IRQ_WRITE: There were %d entries. Appending now.\n", count);
 
     // append the new node
     llHead->Next = NewNameNode;
