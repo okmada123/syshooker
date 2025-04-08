@@ -389,6 +389,9 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 			kprintf("[+] syshooker IRQ_WRITE: newNameNode: %ws.\n", NewNameNode->NameBuffer);
 
+			// uncomment here
+			// status = appendNameNode(llHead, NewNameNode)
+
 			NameNode* llHead = nullptr;
 			if (request->Target == TARGET_FILE) {
 				llHead = SettingsNew.FileMagicNamesHead;
@@ -407,8 +410,7 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 				FreeNameNode(NewNameNode);
 				break;
 			}
-
-			// appendNameNode(llHead, NewNameNode)
+			
 
 			FreeNameNode(NewNameNode); // remove this and implement AppendNameNode
 		}

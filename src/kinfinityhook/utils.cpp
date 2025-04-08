@@ -3,6 +3,53 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
+NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
+    NameNode* llHead = nullptr;
+    if (target == TARGET_FILE) {
+        if (SettingsNew.FileMagicNamesHead == nullptr) {
+            SettingsNew.FileMagicNamesHead = NewNameNode;
+            return STATUS_SUCCESS;
+        }
+        else {
+            llHead = SettingsNew.FileMagicNamesHead;
+            kprintf("[+] syshooker IRQ_WRITE: should add to FILE. Head is now %p\n", llHead);
+        }
+    }
+    else if (target == TARGET_PROCESS) {
+        if (SettingsNew.ProcessMagicNamesHead == nullptr) {
+            SettingsNew.ProcessMagicNamesHead = NewNameNode;
+            return STATUS_SUCCESS;
+        }
+        else {
+            llHead = SettingsNew.ProcessMagicNamesHead;
+            kprintf("[+] syshooker IRQ_WRITE: should add to PROCESS. Head is now %p\n", llHead);
+        }
+    }
+    else if (target == TARGET_REGISTRY) {
+        if (SettingsNew.RegistryMagicNamesHead == nullptr) {
+            SettingsNew.RegistryMagicNamesHead = NewNameNode;
+            return STATUS_SUCCESS;
+        }
+        else {
+            llHead = SettingsNew.RegistryMagicNamesHead;
+            kprintf("[+] syshooker IRQ_WRITE: should add to REGISTRY. Head is now %p\n", llHead);
+        }
+    }
+    else {
+        FreeNameNode(NewNameNode);
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    // traverse the linked list to the end
+    while (llHead->Next != nullptr) {
+        llHead = llHead->Next;
+    }
+    
+    // append the new node
+    llHead->Next = NewNameNode;
+    return STATUS_SUCCESS;
+}
+
 NameNode* CreateNameNode(const wchar_t* NameBuffer, const size_t NameLength) {
     if (!NameBuffer || NameLength <= 0) {
         kprintf("[-] CreateNameNode: NameBuffer (%p) or NameLength (%llu) invalid.\n", NameBuffer, NameLength);
