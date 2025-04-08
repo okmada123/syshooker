@@ -4,5 +4,6 @@
 
 NameNode* CreateNameNode(const wchar_t* NameBuffer, const size_t NameLength);
 void FreeNameNode(NameNode* nn);
+NTSTATUS appendNameNode(Target target, NameNode* NewNameNode);
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName);
 NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubkeyIndexesCount, _Out_ PULONG OkSubkeyIndexesCount, _Out_ PULONG* OkSubkeyIndexes);

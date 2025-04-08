@@ -3,6 +3,39 @@
 #include "../Syshooker-Client/SyshookerCommon.h"
 #include "Settings.h"
 
+NameNode* CreateNameNode(const wchar_t* NameBuffer, const size_t NameLength) {
+    if (!NameBuffer || NameLength <= 0) {
+        kprintf("[-] CreateNameNode: NameBuffer (%p) or NameLength (%llu) invalid.\n", NameBuffer, NameLength);
+        return nullptr;
+    }
+
+    NameNode* result = (NameNode*)ExAllocatePool(NonPagedPool, sizeof(NameNode));
+    if (!result) {
+        kprintf("[-] CreateNameNode: Allocation failed for NameNode struct.\n");
+        return nullptr;
+    }
+
+    result->NameBuffer = (wchar_t*)ExAllocatePool(NonPagedPool, (NameLength + 1) * sizeof(wchar_t)); // NameLength + 1 to make space for \0
+    if (!result->NameBuffer) {
+        kprintf("[-] CreateNameNode: Allocation failed for NameNode->NameBuffer.\n");
+        ExFreePool(result);
+        return nullptr;
+    }
+
+    // copy name from NameBuffer to result->NameBuffer (will be null-terminated)
+    wcsncpy(result->NameBuffer, NameBuffer, NameLength + 1);
+    result->NameLength = NameLength;
+    result->Next = nullptr;
+
+    return result;
+}
+
+void FreeNameNode(NameNode* nn) {
+    ExFreePool(nn->NameBuffer);
+    ExFreePool(nn);
+    return;
+}
+
 NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
     NameNode* llHead = nullptr;
     if (target == TARGET_FILE) {
@@ -36,51 +69,28 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
         }
     }
     else {
-        FreeNameNode(NewNameNode);
         return STATUS_INVALID_PARAMETER;
     }
 
+
+    size_t count = 0;
     // traverse the linked list to the end
     while (llHead->Next != nullptr) {
         llHead = llHead->Next;
+        count++;
     }
-    
+
+    kprintf("[+] syshooker IRQ_WRITE: There were %d entries. Appending now.\n", count);
+
     // append the new node
     llHead->Next = NewNameNode;
     return STATUS_SUCCESS;
 }
 
-NameNode* CreateNameNode(const wchar_t* NameBuffer, const size_t NameLength) {
-    if (!NameBuffer || NameLength <= 0) {
-        kprintf("[-] CreateNameNode: NameBuffer (%p) or NameLength (%llu) invalid.\n", NameBuffer, NameLength);
-        return nullptr;
-    }
-
-    NameNode* result = (NameNode*)ExAllocatePool(NonPagedPool, sizeof(NameNode));
-    if (!result) {
-        kprintf("[-] CreateNameNode: Allocation failed for NameNode struct.\n");
-        return nullptr;
-    }
-
-    result->NameBuffer = (wchar_t*)ExAllocatePool(NonPagedPool, (NameLength + 1) * sizeof(wchar_t)); // NameLength + 1 to make space for \0
-    if (!result->NameBuffer) {
-        kprintf("[-] CreateNameNode: Allocation failed for NameNode->NameBuffer.\n");
-        ExFreePool(result);
-        return nullptr;
-    }
-
-    // copy name from NameBuffer to result->NameBuffer (will be null-terminated)
-    wcsncpy(result->NameBuffer, NameBuffer, NameLength + 1);
-    result->NameLength = NameLength;
-    result->Next = nullptr;
-
-    return result;
-}
-
-void FreeNameNode(NameNode* nn) {
-    ExFreePool(nn->NameBuffer);
-    ExFreePool(nn);
-    return;
+int compareMagicNames(const wchar_t* NameToCheck, enum Target target) {
+    // TODO 
+    // wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)
+    return 0;
 }
 
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName) {

