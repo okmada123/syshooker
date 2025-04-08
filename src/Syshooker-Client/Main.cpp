@@ -18,21 +18,22 @@ int main(int argc, char* argv[]) {
 		return Error("Failed to open Syshooker driver device");
 
 	if (strcmp(argv[1], "write") == 0) {
-		SyshookerApiWriteRequest request;
-		wchar_t path[MAX_PATH_SYSHOOKER] = L"TESTHARDCODED";
-		//printf("Enter path: ");
-		//wscanf(L"%255ws", path);
-
-		size_t index = 0;
-		for (const auto& ch : path) {
-			request.NameBuffer[index] = ch;
-			index++;
+		if (argc < 3) {
+			printf("Need 1 more argument (file name).\n");
+			exit(1);
 		}
-		request.NameBuffer[index] = L'\0';
-		request.NameLength = index;
+		SyshookerApiWriteRequest request;
+
+		// Determine the length needed for the wchar_t buffer
+		size_t length = mbstowcs(NULL, argv[2], 0) + 1; // +1 for the null terminator
+
+		// Convert the char* buffer to a wchar_t* buffer
+		mbstowcs(request.NameBuffer, argv[2], length);
+
+		//request.NameBuffer[index] = L'\0';
+		request.NameLength = length - 1;
 		request.Operation = OPERATION_ADD;
 		request.Target = TARGET_FILE;
-
 
 		DWORD returned;
 		BOOL success = WriteFile(hDevice,

@@ -351,7 +351,6 @@ NTSTATUS SyshookerCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 }
 
 NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
-	kprintf("[+] syshooker IRQ_WRITE - we are here!\n");
 	UNREFERENCED_PARAMETER(DeviceObject);
 	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
 	ULONG_PTR information = 0; // used bytes to return back to client
@@ -377,7 +376,7 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 
 		// print the buffer in kernel
-		kprintf("[+] syshooker IRQ_WRITE: NameBuffer: %ws.\n", request->NameBuffer);
+		//kprintf("[+] syshooker IRQ_WRITE: NameBuffer: %ws.\n", request->NameBuffer);
 
 		if (request->Operation == OPERATION_ADD) {
 			NameNode* NewNameNode = CreateNameNode(request->NameBuffer, request->NameLength);
@@ -409,11 +408,9 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	} while (FALSE);
 
 	// complete IRP
-	kprintf("[+] syshooker IRQ_WRITE - gonna complete now!\n");
 	Irp->IoStatus.Status = status; // whatever status that is currently set
 	Irp->IoStatus.Information = information;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-	kprintf("[+] syshooker IRQ_WRITE - before return\n");
 	return status;
 }
 

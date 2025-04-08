@@ -87,9 +87,29 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
     return STATUS_SUCCESS;
 }
 
-int compareMagicNames(const wchar_t* NameToCheck, enum Target target) {
-    // TODO 
-    // wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)
+int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
+    NameNode* nn = nullptr;
+    switch (target) {
+    case TARGET_FILE:
+        nn = SettingsNew.FileMagicNamesHead;
+        break;
+    case TARGET_PROCESS:
+        nn = SettingsNew.ProcessMagicNamesHead;
+        break;
+    case TARGET_REGISTRY:
+        nn = SettingsNew.RegistryMagicNamesHead;
+        break;
+    default:
+        return 0;
+    }
+
+    while (nn != nullptr) {
+        if (wcscmp(NameToCheck, nn->NameBuffer) == 0) {
+            kprintf("[+] syshooker: found match in matchMagicNames: %ws %ws!\n", NameToCheck, nn->NameBuffer);
+            return 1;
+        }
+        nn = nn->Next;
+    }
     return 0;
 }
 

