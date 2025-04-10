@@ -121,11 +121,11 @@ NTSTATUS DetourNtQuerySystemInformation(
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 
         if (ProcessInformationPtr) {
-			PrintAllProcessEntries(ProcessInformationPtr);
+			//PrintAllProcessEntries(ProcessInformationPtr);
 
             while (1) {
                 //kprintf("[+] infinityhook: NtQuerySystemInformation: PID: %d\n", ProcessInformationPtr->UniqueProcessId);
-				PrintProcessStructInfo(ProcessInformationPtr, 0);
+				//PrintProcessStructInfo(ProcessInformationPtr, 0);
                 WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
 
