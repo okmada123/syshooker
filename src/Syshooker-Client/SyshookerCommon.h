@@ -9,7 +9,8 @@ struct WriteHookData {
 
 typedef enum {
 	OPERATION_ADD,
-	OPERATION_REMOVE
+	OPERATION_REMOVE,
+	OPERATION_TOGGLE,
 } Operation;
 
 typedef enum {

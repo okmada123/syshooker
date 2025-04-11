@@ -67,8 +67,10 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	//UNREFERENCED_PARAMETER(RegistryPath);
 
 	// TODO - remove this hardcoded process hide name
-	NameNode* test = CreateNameNode(L"Test1.exe", 9);
-	SettingsNew.ProcessMagicNamesHead = test;
+	NameNode* ProcessHead = CreateNameNode(L"Test1.exe", 9);
+	NameNode* FileHead = CreateNameNode(L"hideme.txt", 10);
+	SettingsNew.ProcessMagicNamesHead = ProcessHead;
+	SettingsNew.FileMagicNamesHead = FileHead;
 
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
@@ -404,6 +406,10 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 		else if (request->Operation == OPERATION_REMOVE) {
 			// TODO
+		}
+		else if (request->Operation == OPERATION_TOGGLE) {
+			kprintf("[+] syshooker IRQ_WRITE: Toggle overwrite.\n");
+			CALLBACK_OVERWRITE_ENABLED = CALLBACK_OVERWRITE_ENABLED == 1 ? 0 : 1;
 		}
 		else {
 			status = STATUS_INVALID_PARAMETER;

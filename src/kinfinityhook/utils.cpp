@@ -83,6 +83,7 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
 }
 
 int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
+    //kprintf("[+] syshooker: matchMagicNames: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
