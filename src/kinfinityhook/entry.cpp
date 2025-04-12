@@ -435,16 +435,18 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	kprintf("[+] syshooker IRQ_READ called\n");
 	UNREFERENCED_PARAMETER(DeviceObject);
 	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
-	ULONG_PTR information = 0; // used bytes to return back to client
 
 	// get stack location of IRP
 	PIO_STACK_LOCATION irpSp = IoGetCurrentIrpStackLocation(Irp);
+	size_t SettingsDumpSizeBytes = GetSettingsDumpSizeBytes();
 
 	do {
 		ULONG BufferSizeBytes = irpSp->Parameters.Read.Length;
-		if (BufferSizeBytes < 1) {
-			status = STATUS_INVALID_PARAMETER;
-			kprintf("[-] syshooker IRQ_READ: Buffer length 0.\n");
+		kprintf("[+] syshooker: %llu bytes required for settings dump.\n", SettingsDumpSizeBytes);
+
+		if (BufferSizeBytes < SettingsDumpSizeBytes) {
+			status = STATUS_BUFFER_TOO_SMALL;
+			kprintf("[-] syshooker: Buffer too small (%lu). We need %llu bytes.\n", BufferSizeBytes, SettingsDumpSizeBytes);
 			break;
 		}
 
@@ -460,55 +462,86 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 		
 		// first byte - current syshooker status
-		data[0] = CALLBACK_OVERWRITE_ENABLED;
-		information++;
-
-		// iterate over magicNames linked lists and populate the buffer with the NodeNames
-		wchar_t* OutputBuffer = (wchar_t*)(data + 1);
+		*data = CALLBACK_OVERWRITE_ENABLED;
 		
-		// magic files
+		// iterate over magicNames linked lists and populate the buffer with the names
+		wchar_t* OutputBufferPtr = (wchar_t*)(data + 1);
+		
+		// files
 		NameNode* CurrentNameNode = SettingsNew.FileMagicNamesHead;
-		while (CurrentNameNode != nullptr && information < BufferSizeBytes) {
-			if (CurrentNameNode->NameBuffer) {
-				kprintf("[+] syshooker IRQ_READ: Adding to buffer: %ws\n", CurrentNameNode->NameBuffer);
-				size_t index = 0;
-				while (CurrentNameNode->NameBuffer[index] != L'\0' && information < BufferSizeBytes) { // we guarantee NULL-termination
-					kprintf("Ptr: %p, char: %wc, information: %d\n", OutputBuffer, CurrentNameNode->NameBuffer[index], information);
-					*OutputBuffer = CurrentNameNode->NameBuffer[index];
-					OutputBuffer++; // move further in the buffer
-					information += sizeof(wchar_t); // increment byte size used
-					index++;
-				}
-				if (information < BufferSizeBytes) {
-					// add '\' instead of \0 
-					*OutputBuffer = L'\\';
-					OutputBuffer++;
-					information += sizeof(wchar_t);
-				}
-				else {
-					status = STATUS_BUFFER_TOO_SMALL;
-					break;
-				}
+		while (CurrentNameNode != nullptr) {
+			if (CurrentNameNode->NameBuffer == nullptr) {
+				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
+				status = STATUS_FAIL_CHECK;
+				break;
 			}
-
-			if (information >= BufferSizeBytes) break; // do not continue if the output buffer is full
+			size_t index = 0;
+			while (CurrentNameNode->NameBuffer[index] != L'\0') { // we guarantee NULL-termination
+				*OutputBufferPtr = CurrentNameNode->NameBuffer[index];
+				OutputBufferPtr++;
+				index++;
+			}
+			// add '\' or '\0' based on whether this is the last node or not
+			*OutputBufferPtr = CurrentNameNode->Next != nullptr ? L'\\' : L'\0';
+			OutputBufferPtr++;
 			
 			// move to the next NameNode
 			CurrentNameNode = CurrentNameNode->Next;
 		}
-		if (information >= BufferSizeBytes) break; // do not continue if the output buffer is full
-		*OutputBuffer = L'\0';
-		OutputBuffer++;
-		information += sizeof(wchar_t);
+		if (!NT_SUCCESS(status)) break; // if the status is not success, don't continue
+		
 
-		// TODO - ProcessNames
-		// RegistryNames
+		// processes
+		CurrentNameNode = SettingsNew.ProcessMagicNamesHead;
+		while (CurrentNameNode != nullptr) {
+			if (CurrentNameNode->NameBuffer == nullptr) {
+				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
+				status = STATUS_FAIL_CHECK;
+				break;
+			}
+			size_t index = 0;
+			while (CurrentNameNode->NameBuffer[index] != L'\0') { // we guarantee NULL-termination
+				*OutputBufferPtr = CurrentNameNode->NameBuffer[index];
+				OutputBufferPtr++;
+				index++;
+			}
+			// add '\' or '\0' based on whether this is the last node or not
+			*OutputBufferPtr = CurrentNameNode->Next != nullptr ? L'\\' : L'\0';
+			OutputBufferPtr++;
+
+			// move to the next NameNode
+			CurrentNameNode = CurrentNameNode->Next;
+		}
+		if (!NT_SUCCESS(status)) break; // if the status is not success, don't continue 
+		
+		// registry
+		CurrentNameNode = SettingsNew.RegistryMagicNamesHead;
+		while (CurrentNameNode != nullptr) {
+			if (CurrentNameNode->NameBuffer == nullptr) {
+				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
+				status = STATUS_FAIL_CHECK;
+				break;
+			}
+			size_t index = 0;
+			while (CurrentNameNode->NameBuffer[index] != L'\0') { // we guarantee NULL-termination
+				*OutputBufferPtr = CurrentNameNode->NameBuffer[index];
+				OutputBufferPtr++;
+				index++;
+			}
+			// add '\' or '\0' based on whether this is the last node or not
+			*OutputBufferPtr = CurrentNameNode->Next != nullptr ? L'\\' : L'\0';
+			OutputBufferPtr++;
+
+			// move to the next NameNode
+			CurrentNameNode = CurrentNameNode->Next;
+		}
+		if (!NT_SUCCESS(status)) break;
 
 	} while (FALSE);
 
 	// complete IRP
 	Irp->IoStatus.Status = status; // whatever status that is currently set
-	Irp->IoStatus.Information = information;
+	Irp->IoStatus.Information = SettingsDumpSizeBytes;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	return status;
 }

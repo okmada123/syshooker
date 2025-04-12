@@ -109,6 +109,36 @@ int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
     return 0;
 }
 
+size_t GetSettingsDumpSizeBytes() {
+    size_t result = 0;
+
+    // Files
+    NameNode* nn = SettingsNew.FileMagicNamesHead;
+    while (nn != nullptr) {
+        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
+        nn = nn->Next;
+    }
+
+    // Processes
+    nn = SettingsNew.ProcessMagicNamesHead;
+    while (nn != nullptr) {
+        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
+        nn = nn->Next;
+    }
+
+    // Registry
+    nn = SettingsNew.RegistryMagicNamesHead;
+    while (nn != nullptr) {
+        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
+        nn = nn->Next;
+    }
+
+    return result + 1; // +1 because the first byte indicates the syshooker status
+}
+
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName) {
 	// TODO - dynamic allocation
 	PVOID KeyInformationBuffer[100] = { 0 };
