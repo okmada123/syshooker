@@ -101,10 +101,12 @@ int main(int argc, char* argv[]) {
 		BOOL success = ReadFile(hDevice, buffer, sizeof(buffer), &responseLength, nullptr);
 		if (!success) return Error("Reading failed for some reason...");
 		else {
-			printf("Data from driver: %s\n", buffer);
+			printf("Output data responseLength: %d\n", responseLength);
+			printf("Syshooker status: %s\n", buffer[0] == 0 ? "Stopped" : "Running");
+			printf("File magic names: %ws\n", (wchar_t*)(buffer+1));
+
 		}
-		BOOL closeStatus = CloseHandle(hDevice);
-		printf("CloseStatus: %d (success == nonzero status)\n", closeStatus);
+		CloseHandle(hDevice);
 	}
 	else {
 		printf("Invalid operation. TODO - add help message.\n");
