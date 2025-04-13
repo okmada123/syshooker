@@ -66,8 +66,9 @@ int main(int argc, char* argv[]) {
 		BOOL success = WriteFile(hDevice,
 			&request, sizeof(request), // buffer and length
 			&returned, nullptr);
-		if (!success)
+		if (!success) {
 			return Error("Something failed...!");
+		}
 
 		BOOL closeStatus = CloseHandle(hDevice);
 		printf("CloseStatus: %d (success == nonzero status)\n", closeStatus);

@@ -74,7 +74,16 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
 
     // traverse the linked list to the end
     while (llHead->Next != nullptr) {
+        if (wcscmp(NewNameNode->NameBuffer, llHead->NameBuffer) == 0) { // check for duplicates
+            kprintf("[+] syshooker: skipping adding duplicate: %ws\n", NewNameNode->NameBuffer);
+            return STATUS_DUPLICATE_NAME;
+        }
         llHead = llHead->Next;
+    }
+    // don't forget to check the last node for duplicates
+    if (wcscmp(NewNameNode->NameBuffer, llHead->NameBuffer) == 0) {
+        kprintf("[+] syshooker: skipping adding duplicate: %ws\n", NewNameNode->NameBuffer);
+        return STATUS_DUPLICATE_NAME;
     }
 
     // append the new node
