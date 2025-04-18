@@ -479,6 +479,13 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		
 		// files
 		NameNode* CurrentNameNode = SettingsNew.FileMagicNamesHead;
+
+		// ensure that '\0' is added to the buffer even if the target chain is empty
+		// in this case the while cycle won't even run once
+		if (CurrentNameNode == nullptr) {
+			*OutputBufferPtr = L'\0';
+			OutputBufferPtr++;
+		}
 		while (CurrentNameNode != nullptr) {
 			if (CurrentNameNode->NameBuffer == nullptr) {
 				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
@@ -503,6 +510,10 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		// processes
 		CurrentNameNode = SettingsNew.ProcessMagicNamesHead;
+		if (CurrentNameNode == nullptr) {
+			*OutputBufferPtr = L'\0';
+			OutputBufferPtr++;
+		}
 		while (CurrentNameNode != nullptr) {
 			if (CurrentNameNode->NameBuffer == nullptr) {
 				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
@@ -526,6 +537,10 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		
 		// registry
 		CurrentNameNode = SettingsNew.RegistryMagicNamesHead;
+		if (CurrentNameNode == nullptr) {
+			*OutputBufferPtr = L'\0';
+			OutputBufferPtr++;
+		}
 		while (CurrentNameNode != nullptr) {
 			if (CurrentNameNode->NameBuffer == nullptr) {
 				kprintf("[-] syshooker: this should not have happened - NameBuffer is NULL.\n");
