@@ -135,9 +135,8 @@ NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
 
             // handle linked list node removal
             if (PreviousNN == nullptr) {
-                // this happens when there is only 1 node in the target chain, and it should be removed
                 // fix the head address in the Settings structure
-                *TargetChainHead = nullptr;
+                *TargetChainHead = CurrentNN->Next; // this will be null in case that there is only 1 node and we are removing it, or the next node will become the first
             }
             else {
                 // fix the next struct pointer in the previous node
