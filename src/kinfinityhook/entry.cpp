@@ -412,11 +412,17 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 			}
 		}
 		else if (request->Operation == OPERATION_REMOVE) {
-			// TODO
+			if (request->NameLength <= 0) {
+				kprintf("[-] syshooker IRQ_WRITE: remove operation, NameLength 0.\n");
+				status = STATUS_INVALID_PARAMETER;
+				break;
+			}
+			status = removeNameNode(request->Target, request->NameBuffer);
+
 		}
 		else if (request->Operation == OPERATION_TOGGLE) {
-			kprintf("[+] syshooker IRQ_WRITE: Toggle overwrite.\n");
 			CALLBACK_OVERWRITE_ENABLED = CALLBACK_OVERWRITE_ENABLED == 1 ? 0 : 1;
+			kprintf("[+] syshooker IRQ_WRITE: Toggle. Overwrite Status is now: %d\n", CALLBACK_OVERWRITE_ENABLED);
 		}
 		else {
 			status = STATUS_INVALID_PARAMETER;

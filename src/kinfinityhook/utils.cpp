@@ -91,6 +91,75 @@ NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
     return STATUS_SUCCESS;
 }
 
+NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
+    NameNode* CurrentNN = nullptr;
+    NameNode* PreviousNN = nullptr;
+    NameNode** TargetChainHead = nullptr;
+    if (target == TARGET_FILE) {
+        if (SettingsNew.FileMagicNamesHead == nullptr) {
+            return STATUS_SUCCESS; // there are no NameNodes in this target, remove is kind-of successful (it ensures that there are no records with the name)
+        }
+        else {
+            CurrentNN = SettingsNew.FileMagicNamesHead;
+            TargetChainHead = &SettingsNew.FileMagicNamesHead;
+        }
+    }
+    else if (target == TARGET_PROCESS) {
+        if (SettingsNew.ProcessMagicNamesHead == nullptr) {
+            return STATUS_SUCCESS;
+        }
+        else {
+            CurrentNN = SettingsNew.ProcessMagicNamesHead;
+            TargetChainHead = &SettingsNew.ProcessMagicNamesHead;
+        }
+    }
+    else if (target == TARGET_REGISTRY) {
+        if (SettingsNew.RegistryMagicNamesHead == nullptr) {
+            return STATUS_SUCCESS;
+        }
+        else {
+            CurrentNN = SettingsNew.RegistryMagicNamesHead;
+            TargetChainHead = &SettingsNew.RegistryMagicNamesHead;
+        }
+    }
+    else {
+        kprintf("[-] syshooker: removeNameNode: no such target: %d\n", target);
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    // traverse the linked list
+    while (CurrentNN != nullptr) {
+        if (wcscmp(NameToRemove, CurrentNN->NameBuffer) == 0) { // check if the current NameNode should be removed
+            // yes, it should be removed
+            kprintf("[+] syshooker: removeNameNode: should remove this node: %ws\n", CurrentNN->NameBuffer);
+
+            // handle linked list node removal
+            if (PreviousNN == nullptr) {
+                // this happens when there is only 1 node in the target chain, and it should be removed
+                // fix the head address in the Settings structure
+                *TargetChainHead = nullptr;
+            }
+            else {
+                // fix the next struct pointer in the previous node
+                PreviousNN->Next = CurrentNN->Next;
+            }
+
+            // free the 'unlinked' node
+            FreeNameNode(CurrentNN);
+
+            // return from the function (because our linked list guarantees no duplicates, so there is no reason to keep traversing it)
+            return STATUS_SUCCESS;
+        }
+
+        // move pointers
+        PreviousNN = CurrentNN;
+        CurrentNN = CurrentNN->Next;
+    }
+
+    kprintf("[+] syshooker: removeNameNode: name %ws was not found in our chains\n", NameToRemove);
+    return STATUS_SUCCESS;
+}
+
 int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
     //kprintf("[+] syshooker: matchMagicNames: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
