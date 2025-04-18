@@ -186,6 +186,35 @@ int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
     return 0;
 }
 
+/*
+int matchMagicNamesSubstring(const wchar_t* NameToCheck, enum Target target) {
+    // kprintf("[+] syshooker: matchMagicNamesSubstring: %ws\n", NameToCheck);
+    NameNode* nn = nullptr;
+    switch (target) {
+    case TARGET_FILE:
+        nn = SettingsNew.FileMagicNamesHead;
+        break;
+    case TARGET_PROCESS:
+        nn = SettingsNew.ProcessMagicNamesHead;
+        break;
+    case TARGET_REGISTRY:
+        nn = SettingsNew.RegistryMagicNamesHead;
+        break;
+    default:
+        return 0;
+    }
+
+    while (nn != nullptr) {
+        if (wcsstr(NameToCheck, nn->NameBuffer) != nullptr) {
+            kprintf("[+] syshooker: found substring in matchMagicNamesSubstring: %ws %ws!\n", NameToCheck, nn->NameBuffer);
+            return 1;
+        }
+        nn = nn->Next;
+    }
+    return 0;
+}
+*/
+
 size_t GetSettingsDumpSizeBytes() {
     size_t result = 0;
 

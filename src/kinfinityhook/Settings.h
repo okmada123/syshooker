@@ -13,7 +13,7 @@ extern SyshookerSettings Settings;
 typedef struct NameNode {
 	struct NameNode* Next;
 	wchar_t* NameBuffer; // ensure that this is zero-terminated!
-	size_t NameLength;
+	size_t NameLength; // length WITHOUT '\0' (for example L"aaa" will have length 3)
 };
 
 struct SyshookerSettingsNew {

