@@ -191,6 +191,7 @@ size_t GetSettingsDumpSizeBytes() {
 
     // Files
     NameNode* nn = SettingsNew.FileMagicNamesHead;
+    if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
@@ -199,6 +200,7 @@ size_t GetSettingsDumpSizeBytes() {
 
     // Processes
     nn = SettingsNew.ProcessMagicNamesHead;
+    if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
@@ -207,6 +209,7 @@ size_t GetSettingsDumpSizeBytes() {
 
     // Registry
     nn = SettingsNew.RegistryMagicNamesHead;
+    if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character

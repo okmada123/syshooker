@@ -13,7 +13,14 @@ void PrintRequest(const SyshookerApiWriteRequest* request) {
 		request->Target,
 		request->NameBuffer,
 		request->NameLength);
+}
 
+void PrintResponseBuffer(const char* Buffer, const size_t BufferSize) {
+	printf("[DEBUG] Response Buffer: ");
+	for (size_t i = 0; i < BufferSize; i++) {
+		printf("%x ", Buffer[i]);
+	}
+	printf("\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -154,6 +161,9 @@ int main(int argc, char* argv[]) {
 		BOOL success = ReadFile(hDevice, buffer, sizeof(buffer), &responseLength, nullptr);
 		if (!success) return Error("Reading failed for some reason...");
 		else {
+			// debug print of the response buffer
+			// PrintResponseBuffer(buffer, responseLength);
+
 			//printf("Output data responseLength: %d\n", responseLength);
 			printf("Syshooker status: %s\n", buffer[0] == 0 ? "Stopped" : "Running");
 
