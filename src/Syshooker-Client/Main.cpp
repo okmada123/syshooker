@@ -3,9 +3,10 @@
 #include "SyshookerCommon.h"
 constexpr size_t READ_BUFFER_SIZE_BYTES = 1024 * 1024; // 1 MB
 
-int Error(const char* message) {
-	printf("%s (error=%u)\n", message, GetLastError());
-	return 1;
+DWORD Error(const char* message) {
+	DWORD LastErrorCode = GetLastError();
+	printf("%s (error=%u)\n", message, LastErrorCode);
+	return LastErrorCode;
 }
 
 void PrintRequest(const SyshookerApiWriteRequest* request) {
@@ -48,7 +49,7 @@ void PrintHelpMessage() {
 
 BOOL SendWriteRequest(const SyshookerApiWriteRequest* request) {
 	// debug - print request
-	PrintRequest(request);
+	// PrintRequest(request);
 
 	HANDLE hDevice = CreateFile(L"\\\\.\\Syshooker", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (hDevice == INVALID_HANDLE_VALUE)
@@ -59,7 +60,10 @@ BOOL SendWriteRequest(const SyshookerApiWriteRequest* request) {
 		request, sizeof(*request), // buffer and length
 		&returned, nullptr);
 	if (!success) {
-		return Error("Something failed...!");
+		DWORD status = Error("[DEBUG]: WriteFile not successful...");
+		if (status == ERROR_DUP_NAME) {
+			printf("[INFO]: The name already exists.\n");
+		}
 	}
 
 	if (CloseHandle(hDevice) == 0) {
@@ -86,7 +90,10 @@ void GetAndPrintSettings() {
 	DWORD responseLength = 0;
 	BOOL success = ReadFile(hDevice, buffer, READ_BUFFER_SIZE_BYTES, &responseLength, nullptr);
 	if (!success) {
-		Error("Reading failed for some reason...");
+		DWORD status = Error("[DEBUG]: Reading settings failed...");
+		if (status == ERROR_INSUFFICIENT_BUFFER) {
+			printf("[INFO]: Buffer too small.\n");
+;		}
 	}
 	else {
 		// debug print of the response buffer
@@ -168,7 +175,8 @@ int main(int argc, char* argv[]) {
 		request.NameLength = NameLength - 1;
 
 		if (SendWriteRequest(&request)) {
-			printf("Add OK...Read current settings now?\n");
+			printf("[INFO]: OK.\n\n");
+			GetAndPrintSettings();
 		}
 	}
 	else if (strcmp(argv[1], "remove") == 0) {
@@ -208,7 +216,8 @@ int main(int argc, char* argv[]) {
 		request.NameLength = NameLength - 1;
 
 		if (SendWriteRequest(&request)) {
-			printf("Remove OK...Read current settings now?\n");
+			printf("[INFO]: OK.\n\n");
+			GetAndPrintSettings();
 		}
 
 	}
@@ -216,7 +225,8 @@ int main(int argc, char* argv[]) {
 		request.Operation = OPERATION_TOGGLE;
 
 		if (SendWriteRequest(&request)) {
-			printf("Toggle OK...Read current settings now?\n");
+			printf("[INFO]: OK.\n\n");
+			GetAndPrintSettings();
 		}
 	}
 	else if (strcmp(argv[1], "read") == 0) {
