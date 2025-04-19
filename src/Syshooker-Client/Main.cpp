@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "SyshookerCommon.h"
+constexpr size_t READ_BUFFER_SIZE_BYTES = 1024 * 1024; // 1 MB
 
 int Error(const char* message) {
 	printf("%s (error=%u)\n", message, GetLastError());
@@ -66,6 +67,60 @@ BOOL SendWriteRequest(const SyshookerApiWriteRequest* request) {
 	}
 
 	return success;
+}
+
+void GetAndPrintSettings() {
+	HANDLE hDevice = CreateFile(L"\\\\.\\Syshooker", GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	if (hDevice == INVALID_HANDLE_VALUE) {
+		Error("Failed to open Syshooker driver device");
+		return;
+	}
+
+	char* buffer = (char*)calloc(READ_BUFFER_SIZE_BYTES, sizeof(char));
+	if (buffer == nullptr) {
+		printf("[ERROR]: Buffer allocation failed.\n");
+		CloseHandle(hDevice);
+		return;
+	}
+
+	DWORD responseLength = 0;
+	BOOL success = ReadFile(hDevice, buffer, READ_BUFFER_SIZE_BYTES, &responseLength, nullptr);
+	if (!success) {
+		Error("Reading failed for some reason...");
+	}
+	else {
+		// debug print of the response buffer
+		// PrintResponseBuffer(buffer, responseLength);
+
+		printf("Syshooker status: %s\n", buffer[0] == 0 ? "Stopped" : "Running");
+
+		size_t NamesToParseSize = (responseLength - 1) / 2;
+		wchar_t* NamesBuffer = (wchar_t*)(buffer + 1); // + 1 because the first byte is for the status
+		size_t index = 0;
+
+		printf("\n----- File names -----\n");
+		while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
+			printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
+			index++;
+		}
+		index++;
+
+		printf("\n\n----- Process names -----\n");
+		while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
+			printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
+			index++;
+		}
+		index++;
+
+		printf("\n\n----- Registry names -----\n");
+		while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
+			printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
+			index++;
+		}
+
+	}
+	free(buffer);
+	CloseHandle(hDevice);
 }
 
 int main(int argc, char* argv[]) {
@@ -165,48 +220,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else if (strcmp(argv[1], "read") == 0) {
-		HANDLE hDevice = CreateFile(L"\\\\.\\Syshooker", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-		if (hDevice == INVALID_HANDLE_VALUE)
-			return Error("Failed to open Syshooker driver device");
-
-
-		char buffer[1024] = { 0 }; // TODO - dynamic allocation
-		DWORD responseLength = 0;
-		BOOL success = ReadFile(hDevice, buffer, sizeof(buffer), &responseLength, nullptr);
-		if (!success) return Error("Reading failed for some reason...");
-		else {
-			// debug print of the response buffer
-			// PrintResponseBuffer(buffer, responseLength);
-
-			//printf("Output data responseLength: %d\n", responseLength);
-			printf("Syshooker status: %s\n", buffer[0] == 0 ? "Stopped" : "Running");
-
-			size_t NamesToParseSize = (responseLength - 1) / 2;
-			wchar_t* NamesBuffer = (wchar_t*)(buffer + 1); // + 1 because the first byte is for the status
-			size_t index = 0;
-
-			printf("\n----- File names -----\n");
-			while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
-				printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
-				index++;
-			}
-			index++;
-
-			printf("\n\n----- Process names -----\n");
-			while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
-				printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
-				index++;
-			}
-			index++;
-
-			printf("\n\n----- Registry names -----\n");
-			while (index < NamesToParseSize && NamesBuffer[index] != L'\0') {
-				printf("%wc", NamesBuffer[index] == L'\\' ? L'\n' : NamesBuffer[index]);
-				index++;
-			}
-
-		}
-		CloseHandle(hDevice);
+		GetAndPrintSettings();
 	}
 	else {
 		printf("[ERROR]: Invalid operation.\n");
