@@ -97,7 +97,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 	NTSTATUS OriginalStatus = OriginalNtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 	
 	if (NT_SUCCESS(OriginalStatus) && SystemInformationClass == SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS) {
-		kprintf("[+] syshooker: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
+		//kprintf("[+] syshooker: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
 
         SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;

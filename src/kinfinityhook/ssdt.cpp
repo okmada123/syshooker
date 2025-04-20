@@ -6,11 +6,11 @@ const void* GetSsdtAddress() {
 	ULONG SizeOfNt = 0;
 	NtBaseAddress = ImgGetBaseAddress(NULL, &SizeOfNt);
 	if (!NtBaseAddress) {
-		kprintf("[-] infinityhook: Failed to resolve NtBaseAddress.\n");
+		kprintf("[-] syshooker: Failed to resolve NtBaseAddress.\n");
 		return NULL;
 	}
 	else {
-		kprintf("[+] infinityhook: NtBaseAddress: %p, image size %d.\n", NtBaseAddress, SizeOfNt);
+		kprintf("[+] syshooker: NtBaseAddress: %p, image size %d.\n", NtBaseAddress, SizeOfNt);
 	}
 
 	// size of ntkrnlmp.exe on W10 1809 17763.1
@@ -33,10 +33,10 @@ const void* GetSsdtAddress() {
 const void* GetSyscallAddress(size_t SyscallSsdtIndex, PCHAR SsdtAddress) {
 	PVOID OffsetAddress = (PVOID)(SsdtAddress + SyscallSsdtIndex * 4);
 	int offset = *(int*)OffsetAddress;
-	// kprintf("[+] infinityhook: Offset for syscall is on address: %p.\n", OffsetAddress);
-	// kprintf("[+] infinityhook: Offset value: %d %x.\n", offset, offset);
+	// kprintf("[+] syshooker: Offset for syscall is on address: %p.\n", OffsetAddress);
+	// kprintf("[+] syshooker: Offset value: %d %x.\n", offset, offset);
 
 	PVOID SyscallAddress = (SsdtAddress + (offset >> 4));
-	// kprintf("[+] infinityhook: Syscall address: %p\n", SyscallAddress);
+	// kprintf("[+] syshooker: Syscall address: %p\n", SyscallAddress);
 	return SyscallAddress;
 }

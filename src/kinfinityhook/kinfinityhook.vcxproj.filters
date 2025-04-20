@@ -39,9 +39,6 @@
     <ClInclude Include="entry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NtOpenProcess.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NtCreateFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>

