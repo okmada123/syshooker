@@ -43,7 +43,7 @@ NTSTATUS DetourNtCreateFile(
 			memset(FileName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 			memcpy(FileName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-			if (matchMagicNames(FileName, (Target)TARGET_FILE))
+			if (matchSyshookerNames(FileName, (Target)TARGET_FILE))
 			{
 				kprintf("[+] syshooker: Denying direct open access to file: %wZ.\n", ObjectAttributes->ObjectName);
 

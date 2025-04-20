@@ -24,9 +24,9 @@
 
 // settings - empty linked lists by default
 SyshookerSettings Settings = {
-	nullptr, // FileMagicNamesHead
-	nullptr, // ProcessMagicNamesHead
-	nullptr  // RegistryMagicNamesHead
+	nullptr, // FileSyshookerNamesHead
+	nullptr, // ProcessSyshookerNamesHead
+	nullptr  // RegistrySyshookerNamesHead
 };
 
 // Hooked Syscalls
@@ -59,13 +59,13 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	// TODO - remove this hardcoded process hide name
 	NameNode* ProcessHead = CreateNameNode(L"Test1.exe", 9);
 	NameNode* FileHead = CreateNameNode(L"hideme.txt", 10);
-	Settings.ProcessMagicNamesHead = ProcessHead;
-	Settings.FileMagicNamesHead = FileHead;
+	Settings.ProcessSyshookerNamesHead = ProcessHead;
+	Settings.FileSyshookerNamesHead = FileHead;
 	// add another file
 	FileHead = CreateNameNode(L"tajnysubor.txt", 14);
-	Settings.FileMagicNamesHead->Next = FileHead;
+	Settings.FileSyshookerNamesHead->Next = FileHead;
 	NameNode* RegistryHead = CreateNameNode(L"myKey", 5);
-	Settings.RegistryMagicNamesHead = RegistryHead;
+	Settings.RegistrySyshookerNamesHead = RegistryHead;
 
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
@@ -430,11 +430,11 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		// first byte - current syshooker status
 		*data = CALLBACK_OVERWRITE_ENABLED;
 		
-		// iterate over magicNames linked lists and populate the buffer with the names
+		// iterate over SyshookerNames linked lists and populate the buffer with the names
 		wchar_t* OutputBufferPtr = (wchar_t*)(data + 1);
 		
 		// files
-		NameNode* CurrentNameNode = Settings.FileMagicNamesHead;
+		NameNode* CurrentNameNode = Settings.FileSyshookerNamesHead;
 
 		// ensure that '\0' is added to the buffer even if the target chain is empty
 		// in this case the while cycle won't even run once
@@ -465,7 +465,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		
 
 		// processes
-		CurrentNameNode = Settings.ProcessMagicNamesHead;
+		CurrentNameNode = Settings.ProcessSyshookerNamesHead;
 		if (CurrentNameNode == nullptr) {
 			*OutputBufferPtr = L'\0';
 			OutputBufferPtr++;
@@ -492,7 +492,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		if (!NT_SUCCESS(status)) break; // if the status is not success, don't continue 
 		
 		// registry
-		CurrentNameNode = Settings.RegistryMagicNamesHead;
+		CurrentNameNode = Settings.RegistrySyshookerNamesHead;
 		if (CurrentNameNode == nullptr) {
 			*OutputBufferPtr = L'\0';
 			OutputBufferPtr++;

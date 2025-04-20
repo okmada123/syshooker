@@ -39,33 +39,30 @@ void FreeNameNode(NameNode* nn) {
 NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
     NameNode* llHead = nullptr;
     if (target == TARGET_FILE) {
-        if (Settings.FileMagicNamesHead == nullptr) {
-            Settings.FileMagicNamesHead = NewNameNode;
+        if (Settings.FileSyshookerNamesHead == nullptr) {
+            Settings.FileSyshookerNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = Settings.FileMagicNamesHead;
-            kprintf("[+] syshooker IRQ_WRITE: should add to FILE. Head is now %p\n", llHead);
+            llHead = Settings.FileSyshookerNamesHead;
         }
     }
     else if (target == TARGET_PROCESS) {
-        if (Settings.ProcessMagicNamesHead == nullptr) {
-            Settings.ProcessMagicNamesHead = NewNameNode;
+        if (Settings.ProcessSyshookerNamesHead == nullptr) {
+            Settings.ProcessSyshookerNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = Settings.ProcessMagicNamesHead;
-            kprintf("[+] syshooker IRQ_WRITE: should add to PROCESS. Head is now %p\n", llHead);
+            llHead = Settings.ProcessSyshookerNamesHead;
         }
     }
     else if (target == TARGET_REGISTRY) {
-        if (Settings.RegistryMagicNamesHead == nullptr) {
-            Settings.RegistryMagicNamesHead = NewNameNode;
+        if (Settings.RegistrySyshookerNamesHead == nullptr) {
+            Settings.RegistrySyshookerNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = Settings.RegistryMagicNamesHead;
-            kprintf("[+] syshooker IRQ_WRITE: should add to REGISTRY. Head is now %p\n", llHead);
+            llHead = Settings.RegistrySyshookerNamesHead;
         }
     }
     else {
@@ -96,30 +93,30 @@ NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
     NameNode* PreviousNN = nullptr;
     NameNode** TargetChainHead = nullptr;
     if (target == TARGET_FILE) {
-        if (Settings.FileMagicNamesHead == nullptr) {
+        if (Settings.FileSyshookerNamesHead == nullptr) {
             return STATUS_SUCCESS; // there are no NameNodes in this target, remove is kind-of successful (it ensures that there are no records with the name)
         }
         else {
-            CurrentNN = Settings.FileMagicNamesHead;
-            TargetChainHead = &Settings.FileMagicNamesHead;
+            CurrentNN = Settings.FileSyshookerNamesHead;
+            TargetChainHead = &Settings.FileSyshookerNamesHead;
         }
     }
     else if (target == TARGET_PROCESS) {
-        if (Settings.ProcessMagicNamesHead == nullptr) {
+        if (Settings.ProcessSyshookerNamesHead == nullptr) {
             return STATUS_SUCCESS;
         }
         else {
-            CurrentNN = Settings.ProcessMagicNamesHead;
-            TargetChainHead = &Settings.ProcessMagicNamesHead;
+            CurrentNN = Settings.ProcessSyshookerNamesHead;
+            TargetChainHead = &Settings.ProcessSyshookerNamesHead;
         }
     }
     else if (target == TARGET_REGISTRY) {
-        if (Settings.RegistryMagicNamesHead == nullptr) {
+        if (Settings.RegistrySyshookerNamesHead == nullptr) {
             return STATUS_SUCCESS;
         }
         else {
-            CurrentNN = Settings.RegistryMagicNamesHead;
-            TargetChainHead = &Settings.RegistryMagicNamesHead;
+            CurrentNN = Settings.RegistrySyshookerNamesHead;
+            TargetChainHead = &Settings.RegistrySyshookerNamesHead;
         }
     }
     else {
@@ -159,18 +156,18 @@ NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
     return STATUS_SUCCESS;
 }
 
-int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
+int matchSyshookerNames(const wchar_t* NameToCheck, enum Target target) {
     //kprintf("[+] syshooker: matchMagicNames: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
-        nn = Settings.FileMagicNamesHead;
+        nn = Settings.FileSyshookerNamesHead;
         break;
     case TARGET_PROCESS:
-        nn = Settings.ProcessMagicNamesHead;
+        nn = Settings.ProcessSyshookerNamesHead;
         break;
     case TARGET_REGISTRY:
-        nn = Settings.RegistryMagicNamesHead;
+        nn = Settings.RegistrySyshookerNamesHead;
         break;
     default:
         return 0;
@@ -187,7 +184,7 @@ int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
 }
 
 /*
-int matchMagicNamesSubstring(const wchar_t* NameToCheck, enum Target target) {
+int matchSyshookerNamesSubstring(const wchar_t* NameToCheck, enum Target target) {
     // kprintf("[+] syshooker: matchMagicNamesSubstring: %ws\n", NameToCheck);
     NameNode* nn = nullptr;
     switch (target) {
@@ -219,7 +216,7 @@ size_t GetSettingsDumpSizeBytes() {
     size_t result = 0;
 
     // Files
-    NameNode* nn = Settings.FileMagicNamesHead;
+    NameNode* nn = Settings.FileSyshookerNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
@@ -228,7 +225,7 @@ size_t GetSettingsDumpSizeBytes() {
     }
 
     // Processes
-    nn = Settings.ProcessMagicNamesHead;
+    nn = Settings.ProcessSyshookerNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
@@ -237,7 +234,7 @@ size_t GetSettingsDumpSizeBytes() {
     }
 
     // Registry
-    nn = Settings.RegistryMagicNamesHead;
+    nn = Settings.RegistrySyshookerNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
@@ -345,7 +342,7 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
                 SubKeyNameBuffer[i] = subKeyInfo->Name[i];
             }
 
-            if (matchMagicNames(SubKeyNameBuffer, (Target)TARGET_REGISTRY)) {
+            if (matchSyshookerNames(SubKeyNameBuffer, (Target)TARGET_REGISTRY)) {
                 kprintf("[+] syshooker: RegistryKeyHideInformation (SHOULD HIDE): subKey index %d: %ws\n", KeyIndex, SubKeyNameBuffer);
                 *HideSubkeyIndexesCount += 1;
             }

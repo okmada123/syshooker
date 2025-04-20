@@ -8,8 +8,8 @@ typedef struct NameNode {
 };
 
 struct SyshookerSettings {
-	NameNode* FileMagicNamesHead;
-	NameNode* ProcessMagicNamesHead;
-	NameNode* RegistryMagicNamesHead;
+	NameNode* FileSyshookerNamesHead;
+	NameNode* ProcessSyshookerNamesHead;
+	NameNode* RegistrySyshookerNamesHead;
 };
 extern SyshookerSettings Settings;

