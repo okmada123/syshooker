@@ -222,7 +222,7 @@ size_t GetSettingsDumpSizeBytes() {
     NameNode* nn = Settings.FileMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
-        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
         nn = nn->Next;
     }
@@ -231,7 +231,7 @@ size_t GetSettingsDumpSizeBytes() {
     nn = Settings.ProcessMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
-        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
         nn = nn->Next;
     }
@@ -240,7 +240,7 @@ size_t GetSettingsDumpSizeBytes() {
     nn = Settings.RegistryMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
-        kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
+        // kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
         result += (nn->NameLength + 1) * sizeof(wchar_t); // + 1 because of terminating character
         nn = nn->Next;
     }
@@ -248,8 +248,8 @@ size_t GetSettingsDumpSizeBytes() {
     return result + 1; // +1 because the first byte indicates the syshooker status
 }
 
+// Helper function, not really called from anywhere
 void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingFunctionName) {
-	// TODO - dynamic allocation
 	PVOID KeyInformationBuffer[100] = { 0 };
 	size_t BufferSize = 100 * sizeof(PVOID);
 	ULONG ResLength = -1;
@@ -260,10 +260,10 @@ void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingF
 		for (size_t i = 0; i < KeyNamePtr->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
 			HandleNameBuffer[i] = KeyNamePtr->Name[i];
 		}
-		kprintf("[+] infinityhook: ZwQueryKey called from %ws: NameLength: %d, Name: %ws\n", CallingFunctionName, KeyNamePtr->NameLength, HandleNameBuffer);
+		kprintf("[+] syshooker: ZwQueryKey called from %ws: NameLength: %d, Name: %ws\n", CallingFunctionName, KeyNamePtr->NameLength, HandleNameBuffer);
 	}
 	else {
-		kprintf("[-] infinityhook: ZwQueryKey not success: %x\n", KeyResult);
+		kprintf("[-] syshooker: ZwQueryKey not success: %x\n", KeyResult);
 	}
 }
 

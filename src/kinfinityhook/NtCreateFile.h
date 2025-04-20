@@ -18,10 +18,6 @@ typedef NTSTATUS(*NtCreateFile_t)(
 static UNICODE_STRING StringNtCreateFile = RTL_CONSTANT_STRING(L"NtCreateFile");
 static NtCreateFile_t OriginalNtCreateFile = NULL;
 
-/*
-*	This function is invoked instead of nt!NtCreateFile. It will
-*	attempt to filter a file by the "magic" file name.
-*/
 NTSTATUS DetourNtCreateFile(
 	_Out_ PHANDLE FileHandle,
 	_In_ ACCESS_MASK DesiredAccess,
@@ -35,37 +31,28 @@ NTSTATUS DetourNtCreateFile(
 	_In_reads_bytes_opt_(EaLength) PVOID EaBuffer,
 	_In_ ULONG EaLength)
 {
-	//
-	// We're going to filter for our "magic" file name.
-	//
 	if (ObjectAttributes &&
 		ObjectAttributes->ObjectName &&
 		ObjectAttributes->ObjectName->Buffer)
 	{
-		//
-		// Unicode strings aren't guaranteed to be NULL terminated so
-		// we allocate a copy that is.
-		//
-		PWCHAR ObjectName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
+		
+		PWCHAR FileName = (PWCHAR)ExAllocatePool(NonPagedPool, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 
-		if (ObjectName)
+		if (FileName)
 		{
-			memset(ObjectName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
-			memcpy(ObjectName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
+			memset(FileName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
+			memcpy(FileName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-			//
-			// Does it contain our special file name?
-			//
-			if (matchMagicNames(ObjectName, (Target)TARGET_FILE))
+			if (matchMagicNames(FileName, (Target)TARGET_FILE))
 			{
-				kprintf("[+] infinityhook: Denying direct open access to file: %wZ.\n", ObjectAttributes->ObjectName);
+				kprintf("[+] syshooker: Denying direct open access to file: %wZ.\n", ObjectAttributes->ObjectName);
 
-				ExFreePool(ObjectName);
+				ExFreePool(FileName);
 
 				return STATUS_NO_SUCH_FILE;
 			}
 
-			ExFreePool(ObjectName);
+			ExFreePool(FileName);
 		}
 	}
 

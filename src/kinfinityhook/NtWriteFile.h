@@ -37,31 +37,31 @@
 //	PWCHAR fileName = NULL;
 //
 //	if (!NT_SUCCESS(status)) {
-//		kprintf("[+] infinityhook: WriteFile status not success when obtaining Object info by Handle :(!\n");
+//		kprintf("[+] syshooker: WriteFile status not success when obtaining Object info by Handle :(!\n");
 //	}
 //	else {
-//		//kprintf("[+] infinityhook: WriteFile status success!!!\n");
+//		//kprintf("[+] syshooker: WriteFile status success!!!\n");
 //		PFILE_OBJECT fileObject = (PFILE_OBJECT)object;
-//		//kprintf("[+] infinityhook: WriteFile filename direct (length: %d): %wZ\n", fileObject->FileName.Length, fileObject->FileName);
+//		//kprintf("[+] syshooker: WriteFile filename direct (length: %d): %wZ\n", fileObject->FileName.Length, fileObject->FileName);
 //
 //		fileName = (PWCHAR)ExAllocatePool(NonPagedPool, fileObject->FileName.Length + sizeof(wchar_t));
-//		//kprintf("[+] infinityhook: WriteFile fileName pointer after allocation: %p\n", fileName);
+//		//kprintf("[+] syshooker: WriteFile fileName pointer after allocation: %p\n", fileName);
 //
 //		if (fileName != NULL) {
 //			memset(fileName, 0, fileObject->FileName.Length + sizeof(wchar_t));
 //			memcpy(fileName, fileObject->FileName.Buffer, fileObject->FileName.Length);
 //
-//			//kprintf("[+] infinityhook: fileName: %ws\n", fileName);
+//			//kprintf("[+] syshooker: fileName: %ws\n", fileName);
 //
 //			if (wcsstr(fileName, Settings.NtWriteFileMagicName))
 //			{
-//				kprintf("[+] infinityhook: Logging call for NtWriteFile for file: %wZ.\n", fileObject->FileName);
+//				kprintf("[+] syshooker: Logging call for NtWriteFile for file: %wZ.\n", fileObject->FileName);
 //
 //				// Change the first byte in the buffer to be 'X'
 //				char* ptr = (char*)Buffer;
 //				ptr[0] = 'X';
 //
-//				kprintf("[+] infinityhook: NtWriteFile buffer: %s.\n", (char*)Buffer);
+//				kprintf("[+] syshooker: NtWriteFile buffer: %s.\n", (char*)Buffer);
 //			}
 //
 //			ExFreePool(fileName);
