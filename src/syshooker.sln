@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kinfinityhook", "kinfinityhook\kinfinityhook.vcxproj", "{71A0ED4D-0B55-4A92-B020-9021C86BEDA0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "syshooker", "syshooker\syshooker.vcxproj", "{71A0ED4D-0B55-4A92-B020-9021C86BEDA0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libinfinityhook", "libinfinityhook\libinfinityhook.vcxproj", "{B9079C4E-D613-48C4-A649-9146B29CA9E7}"
 EndProject
