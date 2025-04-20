@@ -39,32 +39,32 @@ void FreeNameNode(NameNode* nn) {
 NTSTATUS appendNameNode(Target target, NameNode* NewNameNode) {
     NameNode* llHead = nullptr;
     if (target == TARGET_FILE) {
-        if (SettingsNew.FileMagicNamesHead == nullptr) {
-            SettingsNew.FileMagicNamesHead = NewNameNode;
+        if (Settings.FileMagicNamesHead == nullptr) {
+            Settings.FileMagicNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = SettingsNew.FileMagicNamesHead;
+            llHead = Settings.FileMagicNamesHead;
             kprintf("[+] syshooker IRQ_WRITE: should add to FILE. Head is now %p\n", llHead);
         }
     }
     else if (target == TARGET_PROCESS) {
-        if (SettingsNew.ProcessMagicNamesHead == nullptr) {
-            SettingsNew.ProcessMagicNamesHead = NewNameNode;
+        if (Settings.ProcessMagicNamesHead == nullptr) {
+            Settings.ProcessMagicNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = SettingsNew.ProcessMagicNamesHead;
+            llHead = Settings.ProcessMagicNamesHead;
             kprintf("[+] syshooker IRQ_WRITE: should add to PROCESS. Head is now %p\n", llHead);
         }
     }
     else if (target == TARGET_REGISTRY) {
-        if (SettingsNew.RegistryMagicNamesHead == nullptr) {
-            SettingsNew.RegistryMagicNamesHead = NewNameNode;
+        if (Settings.RegistryMagicNamesHead == nullptr) {
+            Settings.RegistryMagicNamesHead = NewNameNode;
             return STATUS_SUCCESS;
         }
         else {
-            llHead = SettingsNew.RegistryMagicNamesHead;
+            llHead = Settings.RegistryMagicNamesHead;
             kprintf("[+] syshooker IRQ_WRITE: should add to REGISTRY. Head is now %p\n", llHead);
         }
     }
@@ -96,30 +96,30 @@ NTSTATUS removeNameNode(Target target, const wchar_t* NameToRemove) {
     NameNode* PreviousNN = nullptr;
     NameNode** TargetChainHead = nullptr;
     if (target == TARGET_FILE) {
-        if (SettingsNew.FileMagicNamesHead == nullptr) {
+        if (Settings.FileMagicNamesHead == nullptr) {
             return STATUS_SUCCESS; // there are no NameNodes in this target, remove is kind-of successful (it ensures that there are no records with the name)
         }
         else {
-            CurrentNN = SettingsNew.FileMagicNamesHead;
-            TargetChainHead = &SettingsNew.FileMagicNamesHead;
+            CurrentNN = Settings.FileMagicNamesHead;
+            TargetChainHead = &Settings.FileMagicNamesHead;
         }
     }
     else if (target == TARGET_PROCESS) {
-        if (SettingsNew.ProcessMagicNamesHead == nullptr) {
+        if (Settings.ProcessMagicNamesHead == nullptr) {
             return STATUS_SUCCESS;
         }
         else {
-            CurrentNN = SettingsNew.ProcessMagicNamesHead;
-            TargetChainHead = &SettingsNew.ProcessMagicNamesHead;
+            CurrentNN = Settings.ProcessMagicNamesHead;
+            TargetChainHead = &Settings.ProcessMagicNamesHead;
         }
     }
     else if (target == TARGET_REGISTRY) {
-        if (SettingsNew.RegistryMagicNamesHead == nullptr) {
+        if (Settings.RegistryMagicNamesHead == nullptr) {
             return STATUS_SUCCESS;
         }
         else {
-            CurrentNN = SettingsNew.RegistryMagicNamesHead;
-            TargetChainHead = &SettingsNew.RegistryMagicNamesHead;
+            CurrentNN = Settings.RegistryMagicNamesHead;
+            TargetChainHead = &Settings.RegistryMagicNamesHead;
         }
     }
     else {
@@ -164,13 +164,13 @@ int matchMagicNames(const wchar_t* NameToCheck, enum Target target) {
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
-        nn = SettingsNew.FileMagicNamesHead;
+        nn = Settings.FileMagicNamesHead;
         break;
     case TARGET_PROCESS:
-        nn = SettingsNew.ProcessMagicNamesHead;
+        nn = Settings.ProcessMagicNamesHead;
         break;
     case TARGET_REGISTRY:
-        nn = SettingsNew.RegistryMagicNamesHead;
+        nn = Settings.RegistryMagicNamesHead;
         break;
     default:
         return 0;
@@ -192,13 +192,13 @@ int matchMagicNamesSubstring(const wchar_t* NameToCheck, enum Target target) {
     NameNode* nn = nullptr;
     switch (target) {
     case TARGET_FILE:
-        nn = SettingsNew.FileMagicNamesHead;
+        nn = Settings.FileMagicNamesHead;
         break;
     case TARGET_PROCESS:
-        nn = SettingsNew.ProcessMagicNamesHead;
+        nn = Settings.ProcessMagicNamesHead;
         break;
     case TARGET_REGISTRY:
-        nn = SettingsNew.RegistryMagicNamesHead;
+        nn = Settings.RegistryMagicNamesHead;
         break;
     default:
         return 0;
@@ -219,7 +219,7 @@ size_t GetSettingsDumpSizeBytes() {
     size_t result = 0;
 
     // Files
-    NameNode* nn = SettingsNew.FileMagicNamesHead;
+    NameNode* nn = Settings.FileMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
@@ -228,7 +228,7 @@ size_t GetSettingsDumpSizeBytes() {
     }
 
     // Processes
-    nn = SettingsNew.ProcessMagicNamesHead;
+    nn = Settings.ProcessMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);
@@ -237,7 +237,7 @@ size_t GetSettingsDumpSizeBytes() {
     }
 
     // Registry
-    nn = SettingsNew.RegistryMagicNamesHead;
+    nn = Settings.RegistryMagicNamesHead;
     if (nn == nullptr) result += sizeof(wchar_t); // there will be \0 even if the chain is empty
     while (nn != nullptr) {
         kprintf("[+] syshooker: calculating settings dump: %ws\n", nn->NameBuffer);

