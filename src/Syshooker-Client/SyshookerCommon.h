@@ -1,5 +1,5 @@
 #pragma once
-#define MAX_PATH_SYSHOOKER 256
+#define SYSHOOKER_MAX_NAME_LENGTH 256
 
 typedef enum {
 	OPERATION_ADD,
@@ -16,6 +16,6 @@ typedef enum {
 struct SyshookerApiWriteRequest {
 	Operation Operation;
 	Target Target;
-	wchar_t NameBuffer[MAX_PATH_SYSHOOKER];
+	wchar_t NameBuffer[SYSHOOKER_MAX_NAME_LENGTH];
 	size_t NameLength;
 };

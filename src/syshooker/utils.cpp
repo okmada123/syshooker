@@ -256,8 +256,8 @@ void PrintRegistryKeyHandleInformation(HANDLE KeyHandle, const wchar_t* CallingF
 	NTSTATUS KeyResult = ZwQueryKey(KeyHandle, KeyNameInformation, KeyInformationBuffer, BufferSize, &ResLength);
 	if (NT_SUCCESS(KeyResult)) {
 		PKEY_NAME_INFORMATION KeyNamePtr = (PKEY_NAME_INFORMATION)KeyInformationBuffer;
-		wchar_t HandleNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
-		for (size_t i = 0; i < KeyNamePtr->NameLength / 2 && i < MAX_PATH_SYSHOOKER; ++i) {
+		wchar_t HandleNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
+		for (size_t i = 0; i < KeyNamePtr->NameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH; ++i) {
 			HandleNameBuffer[i] = KeyNamePtr->Name[i];
 		}
 		kprintf("[+] syshooker: ZwQueryKey called from %ws: NameLength: %d, Name: %ws\n", CallingFunctionName, KeyNamePtr->NameLength, HandleNameBuffer);
@@ -338,10 +338,10 @@ NTSTATUS RegistryKeyHideInformation(_In_ HANDLE KeyHandle, _Out_ PULONG HideSubk
         if (NT_SUCCESS(status)) {
             
             // validate if this key is OK or not
-            wchar_t SubKeyNameBuffer[MAX_PATH_SYSHOOKER] = { 0 };
+            wchar_t SubKeyNameBuffer[SYSHOOKER_MAX_NAME_LENGTH] = { 0 };
 
             // ->NameLength / 2 , because the field is size in bytes but contains wchars (which consist of 2 bytes each)
-            for (size_t i = 0; i < subKeyInfo->NameLength / 2 && i < MAX_PATH_SYSHOOKER - 1; ++i) { // - 1 to leave space for null-terminator
+            for (size_t i = 0; i < subKeyInfo->NameLength / 2 && i < SYSHOOKER_MAX_NAME_LENGTH - 1; ++i) { // - 1 to leave space for null-terminator
                 SubKeyNameBuffer[i] = subKeyInfo->Name[i];
             }
 

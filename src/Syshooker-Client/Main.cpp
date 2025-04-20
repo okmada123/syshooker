@@ -44,7 +44,7 @@ void PrintHelpMessage() {
 		"- Syshooker-Client.exe remove process explorer.exe\n"
 		"- Syshooker-Client.exe toggle\n"
 		"- Syshooker-Client.exe read\n\n"
-	, MAX_PATH_SYSHOOKER);
+	, SYSHOOKER_MAX_NAME_LENGTH);
 }
 
 BOOL SendWriteRequest(const SyshookerApiWriteRequest* request) {
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		size_t NameLength = strlen(argv[3]) + 1; // + 1 because of null-terminator
-		if (NameLength > MAX_PATH_SYSHOOKER) {
+		if (NameLength > SYSHOOKER_MAX_NAME_LENGTH) {
 			printf("[ERROR]: Name too long.\n");
 			PrintHelpMessage();
 			exit(1);
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		size_t NameLength = strlen(argv[3]) + 1; // + 1 because of null-terminator
-		if (NameLength > MAX_PATH_SYSHOOKER) {
+		if (NameLength > SYSHOOKER_MAX_NAME_LENGTH) {
 			printf("[ERROR]: Name too long.\n");
 			PrintHelpMessage();
 			exit(1);
