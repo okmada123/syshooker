@@ -31,7 +31,7 @@ const void* GetSsdtAddress() {
 }
 
 const void* GetSyscallAddress(size_t SyscallSsdtIndex, PCHAR SsdtAddress) {
-	PVOID OffsetAddress = (PVOID)(SsdtAddress + SyscallSsdtIndex * 4);
+	PVOID OffsetAddress = (PVOID)(SsdtAddress + SyscallSsdtIndex * 4); // * 4 because the entries in SSDT are 32-bit (4 bytes) values
 	int offset = *(int*)OffsetAddress;
 	// kprintf("[+] syshooker: Offset for syscall is on address: %p.\n", OffsetAddress);
 	// kprintf("[+] syshooker: Offset value: %d %x.\n", offset, offset);
