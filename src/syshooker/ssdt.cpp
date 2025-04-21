@@ -24,7 +24,7 @@ const void* GetSsdtAddress() {
 		fffff806`54205e18  03d23900`0219a602
 	*/
 	const UCHAR SsdtOffsetByteSignature[] = {
-		0x04, 0x51, 0xcb, 0xfc, 0x00, 0xb2, 0x13, 0xfd, // first SSDT offset
+		0x04, 0x51, 0xcb, 0xfc, 0x00, 0xb2, 0x13, 0xfd, // first two SSDT offsets (because 1 entry in the table has 32-bits)
 	};
 
 	return MmSearchMemory(NtBaseAddress, SizeOfNt, SsdtOffsetByteSignature, RTL_NUMBER_OF(SsdtOffsetByteSignature));
