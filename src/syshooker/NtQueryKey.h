@@ -83,7 +83,7 @@ NTSTATUS DetourNtQueryKey(
 				return originalStatus;
 			}
 
-			//kprintf("[+] infinityhook: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
+			//kprintf("[+] syshooker: NtQueryKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 
 			// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 			ExFreePool(OkSubkeyIndexesPtr);
