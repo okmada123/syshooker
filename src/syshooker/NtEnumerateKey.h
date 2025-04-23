@@ -47,7 +47,7 @@ NTSTATUS DetourNtEnumerateKey(
 		// !!! DO NOT FORGET TO FREE OkSubkeyIndexesPtr
 
 		if (!NT_SUCCESS(status)) {
-			// should not have failed, but we can't do anything without information from this function...
+			// should not have failed, but we can't do anything without information from RegistryKeyHideInformation...
 			// fallback to the original call
 			return OriginalNtEnumerateKey(KeyHandle, Index, KeyInformationClass, KeyInformation, Length, ResultLength);
 		}
