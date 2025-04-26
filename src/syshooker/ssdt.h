@@ -13,6 +13,7 @@ const void* GetSyscallAddress(size_t SyscallSsdtIndex, PCHAR SsdtAddress);
 #define INDEX_NTOPENKEYEX 0x11a
 #define INDEX_NTQUERYKEY 0x16
 #define INDEX_NTENUMERATEKEY 0x32
+#define INDEX_NTQUERYATTRIBUTESFILE 0x3d
 
 // unused
 // #define INDEX_NTCREATEKEY 0x1d

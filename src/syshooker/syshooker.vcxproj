@@ -99,6 +99,7 @@
     <ClInclude Include="NtEnumerateKey.h" />
     <ClInclude Include="NtOpenKey.h" />
     <ClInclude Include="NtOpenKeyEx.h" />
+    <ClInclude Include="NtQueryAttributesFile.h" />
     <ClInclude Include="NtQueryDirectoryFile.h" />
     <ClInclude Include="NtQueryDirectoryFileEx.h" />
     <ClInclude Include="NtQueryKey.h" />

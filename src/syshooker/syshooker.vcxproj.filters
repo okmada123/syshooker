@@ -75,5 +75,8 @@
     <ClInclude Include="NtOpenKeyEx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NtQueryAttributesFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

