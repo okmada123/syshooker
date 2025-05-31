@@ -3,7 +3,7 @@ Kernel driver that allows system call hooking using [InfinityHook](https://githu
 
 **Use at your own risk.**
 
-![process hiding](/assets/process-hiding.gif)
+![process hiding](/assets/demo.gif)
 
 ## Getting started
 ### Compile
