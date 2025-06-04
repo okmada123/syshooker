@@ -5,6 +5,11 @@ Kernel driver that allows system call hooking using [InfinityHook](https://githu
 
 ![process hiding](/assets/demo.gif)
 
+Syshooker currently allows you to hide the following artifacts:
+- Files
+- Running processes
+- Windows registry keys
+
 ## Getting started
 ### Compile
 To compile the solution, the following components were used:
@@ -62,4 +67,15 @@ sc stop syshooker
 
 # powershell
 sc.exe stop syshooker
+```
+
+## Client
+
+Runtime modification of hiding settings is possible using the client program. Examples:
+
+```
+Syshooker-Client.exe add example.txt                # hide example.txt
+Syshooker-Client.exe remove process explorer.exe    # hide explorer.exe
+Syshooker-Client.exe toggle                         # toggle syscall hooking
+Syshooker-Client.exe read                           # print current settings
 ```
