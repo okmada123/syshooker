@@ -74,7 +74,7 @@ sc.exe stop syshooker
 Runtime modification of hiding settings is possible using the client program. Examples:
 
 ```
-Syshooker-Client.exe add example.txt                # hide example.txt
+Syshooker-Client.exe add file example.txt           # hide example.txt
 Syshooker-Client.exe remove process explorer.exe    # hide explorer.exe
 Syshooker-Client.exe toggle                         # toggle syscall hooking
 Syshooker-Client.exe read                           # print current settings
